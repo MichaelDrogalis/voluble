@@ -35,8 +35,11 @@ public class VolubleSourceConnector extends SourceConnector {
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
         List<Map<String, String>> taskConfigs = new ArrayList<>();
-        Map<String, String> taskConfig = new HashMap<>(this.props);
-        taskConfigs.add(taskConfig);
+
+        for (int k = 0; k < maxTasks; k++) {
+            Map<String, String> taskConfig = new HashMap<>(this.props);
+            taskConfigs.add(taskConfig);
+        }
 
         return taskConfigs;
     }

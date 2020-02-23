@@ -40,27 +40,6 @@
    "#{number.number_between '0','99'}.#{number.number_between '0','99'}"
    "#{bothify '????????','false'}"])
 
-
-
-
-
-
-
-
-(let [props {"genkp.teamA.sometimes.with" "#{Team.name}"
-             "genkp.teamA.sometimes.matching" "teamB.key"
-
-             "genkp.teamB.sometimes.with" "#{Team.name}"
-             "genkp.teamB.sometimes.matching" "teamA.key"}
-      context (atom (c/make-context props))]
-
-  (doseq [n (range 100)]
-    (swap! context c/advance-step)
-    (clojure.pprint/pprint (:generated @context))))
-
-
-
-
 (def gen-attr-name
   (gen/such-that not-empty gen/string-alphanumeric))
 

@@ -24,8 +24,9 @@
 (defn complex-schema [x]
   (let [builder (.optional (SchemaBuilder/struct))]
     (.build
+     ^SchemaBuilder
      (reduce-kv
-      (fn [b k v]
+      (fn [^SchemaBuilder b k v]
         (.field b k (primitive-schema v)))
       builder
       x))))
@@ -40,7 +41,7 @@
 (defn build-converted-obj [x schema]
   (if (map? x)
     (let [s (Struct. schema)]
-      (doseq [[k v] x]
+      (doseq [[^String k v] x]
         (.put s k v))
       s)
     x))

@@ -1,4 +1,5 @@
-(ns io.mdrogalis.voluble.generate)
+(ns io.mdrogalis.voluble.generate
+  (:import [com.github.javafaker Faker]))
 
 (def default-matching-rate 0.1)
 
@@ -19,7 +20,7 @@
 
 (defmethod gen-value :isolated
   [{:keys [faker] :as context} deps generator]
-  (.expression faker (:expression generator)))
+  (.expression ^Faker faker (:expression generator)))
 
 (defmethod gen-value :dependent
   [context deps {:keys [topic attr] :as generator}]
@@ -35,7 +36,7 @@
               (get-in deps [topic (:ns generator)]))]
     (if (and (<= (rand) rate) dep)
       dep
-      (.expression (:faker context) expression))))
+      (.expression ^Faker (:faker context) expression))))
 
 (defn choose-null-rate [{:keys [attr-configs]} topic ns* attr]
   (let [attr-rate (get-in attr-configs [topic ns* attr "null" "rate"])]
