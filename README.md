@@ -11,7 +11,7 @@ When working with Apache Kafka, you often find yourself wanting to continuously 
 
 Voluble ships as a [Kafka connector](https://docs.confluent.io/current/connect/index.html) to make it easy to scale and change serialization formats. You can use Kafka Connect through its REST API or integrated with [ksqlDB](http://ksqldb.io/). In this guide, I demonstrate using the latter, but the configuration is the same for both. I leave out Connect specific configuration like serializers and tasks that need to be configured for any connector.
 
-## Simple example
+## Quick example
 
 Let's dive right in and look at an example. This exercises a bunch of features to give you an idea of what it's like to work with Voluble:
 
