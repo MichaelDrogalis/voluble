@@ -13,29 +13,87 @@ Voluble ships as a [Kafka connector](https://docs.confluent.io/current/connect/i
 
 ## Simple example
 
-Let's look at a simple example of Voluble in action. Let's say that you want to generate events for a topic named "users". Suppose that you're expecting the key of each event to be a UUID and the value to be a map with a few different attributes. You can express that in Voluble like so:
+Let's dive right in and look at an example. This exercises a bunch of features to give you an idea of what it's like to work with Voluble:
 
 ```sql
 CREATE SOURCE CONNECTOR s WITH (
   'connector.class' = 'io.mdrogalis.voluble.VolubleSourceConnector',
-  'genkp.users.with' = '#{Internet.uuid}',
-  'genv.users.jobTitle.with' = '#{Name.title.job}',
-  'genv.users.country.with' = '#{Address.country_code}',
-  'genv.users.creditCard.with' = '#{Finance.credit_card}'
+
+  'genkp.owners.with' = '#{Internet.uuid}',
+  'genv.owners.name.with' = '#{Name.full_name}',
+  'genv.owners.creditCardNumber.with' = '#{Finance.credit_card}',
+
+  'genk.cats.name.with' = '#{FunnyName.name}',
+  'genv.cats.owner.matching' = 'owners.key',
+
+  'genk.diets.catName.matching' = 'cats.key.name',
+  'genv.diets.dish.with' = '#{Food.vegetables}',
+  'genv.diets.measurement.with' = '#{Food.measurements}',
+  'genv.diets.size.with' = '#{Food.measurement_sizes}',
+
+  'genk.adopters.name.sometimes.with' = '#{Name.full_name}',
+  'genk.adopters.name.sometimes.matching' = 'adopters.key.name',
+  'genv.adopters.jobTitle.with' = '#{Job.title}',
+  'attrk.adopters.name.matching.rate' = '0.05',
+  'topic.adopters.tombstone.rate' = '0.10',
+
+  'global.history.records.max' = '100000'
 );
 ```
 
-There are two main directives in the above configuration: `genkp` and `genv`, which stand for "generate key primitive" and "generate value" respectively. The value for each of these properties is a Java Faker expression. When you run this connector, you'll get data like the following:
+This example generates data for 4 topics: `owners`, `cats`, `diets`, and `adopters`. The `owners` topic consists of records with primitive UUID keys and complex values (`name` and `creditCardNumber`). These values are generated through Java Faker expressions. The value of the events for `cats` has a field named `owner` which has to match one of the UUID generated in the `owner` topic. In the `diets` topic, you can see a similar property set for the key, except this one grabs a value from a complex key (`name` in the key of the `cats` topic). The `adopters` topic has keys that are sometimes new, but sometimes repeated (`sometimes.matching` is running against the same topic as its specified for). This is basically a nice easy to represent mutation. A tombstone record is generated for this topic `10%` of the time. Lastly, Voluble will keep at most `100000` records of history in memory per topic to perform all this matching against.
+
+When you run this connector, you'll get data looking roughly like the following:
 
 ```json
-{
-    "key": "e74deee9-4746-4b4a-9525-ed28453b58e6",
-    "value": {
-        "jobTitle": "Facilitator",
-        "country": "ZA",
-        "creditCard" "4061-1479-1219-8683"
+
+[
+    {
+        "topic": "owners",
+        "event": {
+            "key": "57da6bd0-dc33-4c2d-9a3f-046d2a008085",
+            "value": {
+                "name": "Rene Bashirian",
+                "creditCardNumber": "3680-695522-0973"
+            }
+        }
+    },
+    {
+        "topic": "cats",
+        "event": {
+            "key": {
+                "name": "Kenny Dewitt"
+            },
+            "value": {
+                "owner": "57da6bd0-dc33-4c2d-9a3f-046d2a008085"
+            }
+        }
+    },
+    {
+        "topic": "diets",
+        "event": {
+            "key": {
+                "name": "Kenny Dewitt"
+            },
+            "value": {
+                "dish": "Celery",
+                "measurement": "teaspoon",
+                "size": "1/3"
+            }
+        }
+    },
+    {
+        "topic": "adopters",
+        "event": {
+            "key": {
+                "name": "Sheldon Feeney"
+            },
+            "value": {
+                "jobTitle": "IT Producer"
+            }
+        }
     }
-}
+]
 ```
 
 ## Usage
@@ -63,6 +121,8 @@ Topic is the topic that Voluble will generate data to for this expression. If yo
 #### Generator
 
 There are two types of generators: `with` and `matching`. `with` takes a Java Faker expression as its value and generates data irrespective of any other topics. `matching` allows you to generate data that has already been generated in another topic. This is useful when your real data has relationships and might be joined downstream. The value for a `matching` generator takes the form of: `<topic>.[key|value].[attribute?]`. This syntax let's you target data in another topic in either the key or value of a record. If it's a complex data structure, you can get a single key out of it.
+
+`matching` is "stable", in that for every iteration, Voluble selects a single event from another topic and runs all matches against that.
 
 #### Qualifier
 
