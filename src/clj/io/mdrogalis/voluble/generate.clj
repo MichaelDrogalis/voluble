@@ -87,7 +87,7 @@
              (assoc-in all [:result attr] generated))
            (reduced {:success? false})))
        {:success? true
-        :result {}}
+        :result nil}
        (:attrs generators)))))
 
 (defn invoke-key-generator [context deps generators]
@@ -101,4 +101,3 @@
           (f)
           {:success? true :value nil}))
       (f))))
-

@@ -7,10 +7,11 @@
            [com.github.javafaker Faker]))
 
 
-;; TODO Write tests
+;; TODO Pre-parse configurations
 ;; TODO Push all generator work to compilation phase
+;; TODO Write tests
 ;; TODO Knob to control generation frequency, both globally + per topic
-;; TODO Validation
+;; TODO Validation on properties
 
 (def max-attempts 100)
 

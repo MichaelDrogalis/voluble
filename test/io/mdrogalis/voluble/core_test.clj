@@ -238,6 +238,7 @@
 ;; - undefined vals are nil
 ;; - history never exceeds global max
 ;; - history never exceeds topic max if it's set
+;; - matching always takes from the other topic
 
 
 
