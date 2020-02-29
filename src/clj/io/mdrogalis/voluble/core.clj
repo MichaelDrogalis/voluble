@@ -10,11 +10,8 @@
 ;; TODO bounded data sets
 ;; TODO timestamp math
 ;; TODO distributions
-;; TODO Pre-parse configurations
-;; TODO Push all generator work to compilation phase
 ;; TODO Write tests
 ;; TODO Knob to control generation frequency, both globally + per topic // throttling
-;; TODO Validation on properties
 ;; TODO Scoped events
 
 (def max-attempts 100)
