@@ -7,11 +7,11 @@
            [com.github.javafaker Faker]))
 
 
+;; TODO Write tests
+;; TODO Knob to control generation frequency, both globally + per topic // throttling
 ;; TODO bounded data sets
 ;; TODO timestamp math
 ;; TODO distributions
-;; TODO Write tests
-;; TODO Knob to control generation frequency, both globally + per topic // throttling
 ;; TODO Scoped events
 
 (def max-attempts 100)
