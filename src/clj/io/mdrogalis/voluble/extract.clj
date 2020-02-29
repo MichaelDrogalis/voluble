@@ -16,7 +16,7 @@
   (reduce-kv
    (fn [all {:keys [topic] :as k} v]
      (if (:generator k)
-       (let [parsed-val (p/parse-value k v)
+       (let [parsed-val (p/parse-generator-value k v)
              augmented-val (p/augment-parsed-val k parsed-val)]
          (-> all
              (store-generator k augmented-val)
@@ -29,7 +29,8 @@
   (reduce-kv
    (fn [all k v]
      (if (= (:kind k) :global)
-       (assoc-in all (:config k) v)
+       (let [parsed-val (p/parse-global-value k v)]
+         (assoc-in all (:config k) parsed-val))
        all))
    {}
    kvs))
@@ -38,7 +39,8 @@
   (reduce-kv
    (fn [all k v]
      (if (= (:kind k) :topic)
-       (assoc-in all (into [(:topic k)] (:config k)) v)
+       (let [parsed-val (p/parse-topic-value k v)]
+         (assoc-in all (into [(:topic k)] (:config k)) parsed-val))
        all))
    {}
    kvs))
@@ -47,7 +49,8 @@
   (reduce-kv
    (fn [all k v]
      (if (some #{(:kind k)} #{:attribute-primitive :attribute-complex})
-       (assoc-in all (into [(:topic k) (:ns k) (:attr k)] (:config k)) v)
+       (let [parsed-val (p/parse-attr-value k v)]
+         (assoc-in all (into [(:topic k) (:ns k) (:attr k)] (:config k)) parsed-val))
        all))
    {}
    kvs))

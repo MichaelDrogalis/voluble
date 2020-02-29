@@ -112,7 +112,7 @@ Let's break down what exactly that means.
 
 #### Directives
 
-There are 4 top-level directives for generating a single Kafka record: `genk`, `genkp`, `genv`, and `genv`. Those stand for generate key, generate key primitive, generate value, and generate value primitive. Non-primitive, or complex, generators are for generating maps of values where the keys are named. Key and value generators can be used together in any combination, but primitive and complex generators for the same part of a record, like the key, are mutually exclusive.
+There are 4 top-level directives for generating a single Kafka record: `genk`, `genkp`, `genv`, and `genvp`. Those stand for generate key, generate key primitive, generate value, and generate value primitive. Non-primitive, or complex, generators are for generating maps of values where the keys are named. Key and value generators can be used together in any combination, but primitive and complex generators for the same part of a record, like the key, are mutually exclusive.
 
 #### Topic and attribute
 

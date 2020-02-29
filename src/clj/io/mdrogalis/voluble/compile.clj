@@ -1,4 +1,5 @@
-(ns io.mdrogalis.voluble.compile)
+(ns io.mdrogalis.voluble.compile
+  (:require [io.mdrogalis.voluble.generate :as g]))
 
 (defn sort-strategies [strategies]
   (sort-by (juxt :strategy :qualified?) strategies))
@@ -20,36 +21,67 @@
            :ns (:ns (first sorted-seq))
            :attr (:attr (first sorted-seq))})))
 
-(comment
-  (throw (IllegalArgumentException.
-          
-          (format "Invalid series of generators for collection '%s' and key '%s'. Expected a single 'within', a single 'matching', or a pair of 'sometimes.with' and 'sometimes.matching'. Found: %s"
-                  (:collection (first generators))
-                  (:column (first generators))
-                  (s/join ", " (map :original-key generators))))))
+(defn compile-solo-gen [context verify-deps-f value-gen-f]
+  (fn [deps dep-targets]
+    (if (verify-deps-f deps dep-targets)
+      {:success? true
+       :result (value-gen-f dep-targets)}
+      {:success? false})))
 
-(defn compile-gen-namespace [precompiled topic namespaces ns*]
-  (let [attrs-gen (get-in namespaces [ns* :attrs])
-        solo-gen (get-in namespaces [ns* :solo])]
-    (cond attrs-gen
-          (reduce-kv
-           (fn [pre attr generators]
-             (let [generator (compile-generator-strategy generators)]
-               (assoc-in pre [topic ns* :attrs attr] generator)))
-           precompiled
-           attrs-gen)
+(defn compile-attrs-gen [context attr-fns]
+  (fn [deps dep-targets]
+    (reduce-kv
+     (fn [all attr {:keys [verify-deps-f value-gen-f]}]
+       (if (verify-deps-f deps dep-targets)
+         (let [generated (value-gen-f dep-targets)]
+           (assoc-in all [:result attr] generated))
+         (reduced {:success? false})))
+     {:success? true
+      :result nil}
+     attr-fns)))
 
-          solo-gen
-          (let [generator (compile-generator-strategy solo-gen)]
-            (assoc-in precompiled [topic ns* :solo] generator))
+(defn maybe-tombstone [context topic ns* gen-f]
+  (let [topic-rate (get-in context [:topic-configs topic "tombstone" "rate"])]
+    (if (and (= ns* :value) topic-rate)
+      (fn [deps dep-targets]
+        (if (>= (rand) topic-rate)
+          (gen-f deps dep-targets)
+          {:success? true :value nil}))
+      gen-f)))
 
-          :else precompiled)))
+(defn compile-gen-namespace [context topic namespaces ns*]
+  (let [solo-gen (get-in namespaces [ns* :solo])
+        attrs-gen (get-in namespaces [ns* :attrs])]
+    (cond solo-gen
+          (let [generator (compile-generator-strategy solo-gen)
+                verify-deps-f (g/verify-deps-fn generator)
+                value-gen-f (g/gen-value-fn context generator)
+                gen-f (compile-solo-gen context verify-deps-f value-gen-f)
+                tombstone-f (maybe-tombstone context topic ns* gen-f)]
+            (assoc-in context [:generators topic ns*] tombstone-f))
 
-(defn compile-generator-strategies [m]
+          attrs-gen
+          (let [attr-fns (reduce-kv
+                          (fn [all attr generators]
+                            (let [generator (compile-generator-strategy generators)
+                                  verify-deps-f (g/verify-deps-fn generator)
+                                  gen-f (g/gen-value-fn context generator)]
+                              (-> all
+                                  (assoc-in [attr :verify-deps-f] verify-deps-f)
+                                  (assoc-in [attr :value-gen-f] gen-f))))
+                          {}
+                          attrs-gen)
+                gen-f (compile-attrs-gen context attr-fns)
+                tombstone-f (maybe-tombstone context topic ns* gen-f)]
+            (assoc-in context [:generators topic ns*] tombstone-f))
+
+          :else context)))
+
+(defn compile-generator-strategies [context]
   (reduce-kv
-   (fn [all topic namespaces]
-     (-> all
+   (fn [ctx topic namespaces]
+     (-> ctx
          (compile-gen-namespace topic namespaces :key)
          (compile-gen-namespace topic namespaces :value)))
-   m
-   m))
+   context
+   (:generators context)))

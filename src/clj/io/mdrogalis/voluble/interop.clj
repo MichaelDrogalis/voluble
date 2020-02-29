@@ -1,5 +1,6 @@
 (ns io.mdrogalis.voluble.interop
-  (:require [io.mdrogalis.voluble.core :as c])
+  (:require [io.mdrogalis.voluble.core :as c]
+            [criterium.core :as crit])
   (:import [java.util HashMap]
            [java.util ArrayList]
            [org.apache.kafka.connect.source SourceRecord]
@@ -61,3 +62,58 @@
         record (SourceRecord. (HashMap.) (HashMap.) topic nil k-schema k-obj v-schema v-obj)]
     (.add records record)
     records))
+
+(def expressions
+  ["#{Name.male_first_name}"
+   "#{Name.female_first_name}"
+   "#{Name.first_name}"
+   "#{Name.last_name}"
+   "#{Name.name}"
+   "#{Name.name_with_middle}"
+   "#{Name.prefix}"
+   "#{Name.suffix}"
+   "#{Name.title.descriptor}"
+   "#{Name.title.level}"
+   "#{Name.title.job}"
+   "#{Name.blood_group}"
+   "#{Address.city_prefix}"
+   "#{Address.city_suffix}"
+   "#{Address.country}"
+   "#{Address.country_code}"
+   "#{Address.country_code_long}"
+   "#{Address.building_number}"
+   "#{Address.community_prefix}"
+   "#{Address.community_suffix}"
+   "#{Address.street_suffix}"
+   "#{Address.secondary_address}"
+   "#{Address.postcode}"
+   "#{Address.state}"
+   "#{Address.state_abbr}"
+   "#{Address.time_zone}"
+   "#{Finance.credit_card}"
+   "#{number.number_between '-999999999','999999999'}"
+   "#{number.number_between '0','99'}.#{number.number_between '0','99'}"
+   "#{bothify '????????','false'}"])
+
+(defn -main [& args]
+  (let [props {"genk.RCkl.bCJf.matching" "VE.key",
+               "genp.RCkl.E.with" "#{Address.community_prefix}",
+               "genp.c.n08.matching" "VE.value",
+               "genp.c.Vxq.with" "#{Address.community_suffix}",
+               "genp.RCkl.5v.matching" "VE.key",
+               "genp.RCkl.41.with" "#{Address.community_suffix}",
+               "genk.RCkl.kD.matching" "VE.value",
+               "genkp.VE.with" "#{Name.name_with_middle}",
+               "genk.RCkl.94Y.with" "#{Name.title.level}",
+               "genk.RCkl.W.with" "#{Name.male_first_name}",
+               "genp.c.5D.matching" "VE.value",
+               "genp.RCkl.nm.with" "#{Name.title.level}",
+               "genp.c.KAz.matching" "VE.key",
+               "genp.RCkl.C6S.matching" "VE.key",
+               "genvp.VE.with" "#{Address.postcode}",
+               "genkp.c.with" "#{Name.title.descriptor}"}
+        context (make-context props)
+        f (com.github.javafaker.Faker.)]
+    (time
+     (doseq [_ (range 10000)]
+       (time (generate-source-record context))))))

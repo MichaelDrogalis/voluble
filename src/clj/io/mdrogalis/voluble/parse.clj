@@ -5,7 +5,11 @@
   {"genkp" :key
    "genk" :key
    "genvp" :value
-   "genv" :value})
+   "genv" :value
+   "attrkp" :key
+   "attrk" :key
+   "attrvp" :value
+   "attrv" :value})
 
 (defmulti parse-key
   (fn [kind k]
@@ -97,7 +101,7 @@
    nil
    (methods parse-key)))
 
-(defn parse-value [{:keys [generator]} v]
+(defn parse-generator-value [{:keys [generator]} v]
   (case generator
     "with" {:strategy :isolated
             :expression v}
@@ -106,6 +110,33 @@
                   :topic topic
                   :ns (keyword ns*)
                   :attr attr})))
+
+(defn parse-global-value [{:keys [config] :as parsed-k} v]
+  (cond (= config ["history" "records" "max"])
+        (Integer/parseInt v)
+
+        (= config ["matching" "rate"])
+        (Double/parseDouble v)
+
+        :else v))
+
+(defn parse-topic-value [{:keys [config] :as parsed-k} v]
+  (cond (= config ["history" "records" "max"])
+        (Integer/parseInt v)
+
+        (= config ["tombstone" "rate"])
+        (Double/parseDouble v)
+
+        :else v))
+
+(defn parse-attr-value [{:keys [config] :as parsed-k} v]
+  (cond (= config ["null" "rate"])
+        (Double/parseDouble v)
+
+        (= config ["matching" "rate"])
+        (Double/parseDouble v)
+
+        :else v))
 
 (defn augment-parsed-val [parsed-k parsed-v]
   (let [sub-keys (select-keys parsed-k [:topic :ns :attr :original-key :qualified?])]

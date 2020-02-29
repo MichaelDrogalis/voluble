@@ -213,12 +213,12 @@
 (comment
   (clojure.pprint/pprint
    (tc/quick-check
-    10
+    100
     (prop/for-all
      [props (generate-props)]
      (let [context (atom (c/make-context (merge props {"global.history.records.max" "5"})))
            records (atom [])
-           iterations 100]
+           iterations 50]
 
        (doseq [_ (range iterations)]
          (swap! context c/advance-until-success)
@@ -242,13 +242,14 @@
 
 
 
-
-
 (deftest primitive-keys
   (let [props {"genkp.users.with" "#{Name.male_first_name}"}
         context (c/make-context props)
         step (c/advance-step context)]
     (clojure.pprint/pprint (:generated step))))
+
+
+
 
 (deftest complex-keys
   (let [props {"genk.users.name.with" "#{Name.male_first_name}"
@@ -258,11 +259,18 @@
         step (c/advance-step context)]
     (clojure.pprint/pprint (:generated step))))
 
+
+
+
 (deftest primitive-values
   (let [props {"genvp.users.with" "#{Name.male_first_name}"}
         context (c/make-context props)
         step (c/advance-step context)]
-    (clojure.pprint/pprint step)))
+    (clojure.pprint/pprint (:generated step))))
+
+
+
+
 
 (deftest complex-values
   (let [props {"genv.users.name.with" "#{Name.male_first_name}"
@@ -275,9 +283,8 @@
 (deftest prim-kvs
   (let [props {"genkp.users.with" "#{Name.male_first_name}"
                "genvp.users.with" "#{Name.blood_group}"}
-        context (c/make-context props)
-        step (c/advance-step context)]
-    (clojure.pprint/pprint step)))
+        context (c/make-context props)]
+    (clojure.pprint/pprint (dissoc context :topic-seq))))
 
 
 
@@ -304,7 +311,8 @@
                "genv.publications.title.with" "#{Book.title}"}
         context (c/make-context props)
         step (c/advance-step context)]
-    (clojure.pprint/pprint (:generated step))))
+    ;(clojure.pprint/pprint context)
+    ))
 
 (deftest matching-complex-keys
   (let [props {"genk.users.name.with" "#{Name.full_name}"
@@ -336,7 +344,9 @@
                "genk.users.name.sometimes.matching" "users.key.name"
                "attrk.users.name.matching.rate" "0.5"
 
-               "genv.users.bloodType.with" "#{Name.blood_group}"}]))
+               "genv.users.bloodType.with" "#{Name.blood_group}"}
+        context (c/make-context props)]
+    (clojure.pprint/pprint context)))
 
 (deftest global-adjustable-mutation-rate
   (let [props {"global.matching.rate" "0.6"
@@ -350,7 +360,7 @@
                "genv.cats.bloodType.with" "#{Name.blood_group}"}
         context (c/make-context props)
         step (c/advance-step context)]
-    (clojure.pprint/pprint (:generated step))))
+    (clojure.pprint/pprint context)))
 
 (deftest three-way-matching
   (let [props {"genkp.users.with" "#{Name.full_name}"
