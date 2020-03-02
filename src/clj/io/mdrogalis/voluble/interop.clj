@@ -115,5 +115,5 @@
         context (make-context props)
         f (com.github.javafaker.Faker.)]
     (time
-     (doseq [_ (range 10000)]
-       (time (generate-source-record context))))))
+     (doseq [_ (range 100000)]
+       (generate-source-record context)))))

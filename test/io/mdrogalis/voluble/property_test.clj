@@ -5,7 +5,6 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [clojure.string :as s]
-            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [com.theinternate.generators.graph :as graph]
             [io.mdrogalis.voluble.core :as c]))
 
@@ -71,13 +70,27 @@
      (vec
       (map-indexed
        (fn [i x]
-         (if (= x :solo)
-           (assoc (get topics i) ns* :solo)
-           (assoc-in (get topics i) [ns* :attrs] x)))
+         (cond (= x :none)
+               (get topics i)
+
+               (= x :solo)
+               (assoc (get topics i) ns* :solo)
+
+               :else
+               (assoc-in (get topics i) [ns* :attrs] x)))
        kinds)))
    (gen/vector
-    (gen/one-of [(gen/return :solo) gen-attr-names])
+    (gen/one-of [(gen/return :none) (gen/return :solo) gen-attr-names])
     (count topics))))
+
+(defn remove-orphan-topics [topics]
+  (let [orphans (->> topics
+                     (filter (fn [t] (and (nil? (:key t)) (nil? (:value t)))))
+                     (map :topic-name)
+                     (into #{}))]
+    (->> topics
+         (remove (fn [t] (contains? orphans (:topic-name t))))
+         (map (fn [t] (update t :deps (fn [deps] (vec (remove (fn [d] (contains? orphans d)) deps)))))))))
 
 (defn index-by-topic [topics]
   (reduce-kv
@@ -97,7 +110,7 @@
    (fn [all topic]
      (let [base (select-keys topic [:topic-name :deps])
            ks (flatten-ns base topic :key)
-           vs (flatten-ns base topic :val)]
+           vs (flatten-ns base topic :value)]
        (into all (into ks vs))))
    []
    topics))
@@ -130,7 +143,7 @@
              (assoc attr :dep-ns ns*)
              attr)))
        namespaces)))
-   (gen/vector (gen/one-of [(gen/return :key) (gen/return :val)]) (count attrs))))
+   (gen/vector (gen/one-of [(gen/return :key) (gen/return :value)]) (count attrs))))
 
 (defn choose-dep-attr [by-topic attrs]
   (gen/fmap
@@ -141,7 +154,7 @@
          (let [attr (get attrs i)]
            (if (:dep attr)
              (let [kind (get-in by-topic [(:dep attr) (:dep-ns attr)])]
-               (if (= kind :solo)
+               (if (or (= kind :solo) (empty? (:attrs kind)))
                  (assoc attr :dep-attr nil)
                  (let [k (mod n (count (:attrs kind)))]
                    (assoc attr :dep-attr (get (:attrs kind) k)))))
@@ -149,18 +162,35 @@
        indices)))
    (gen/vector gen/large-integer (count attrs))))
 
+(defn choose-qualifier [attrs]
+  (gen/fmap
+   (fn [qualifiers]
+     (vec
+      (map-indexed
+       (fn [i qualifier]
+         (let [attr (get attrs i)]
+           (if (and (:dep attr) qualifier)
+             (assoc attr :qualifier :sometimes)
+             attr)))
+       qualifiers)))
+   (gen/vector (gen/one-of [(gen/return true) (gen/return false)]) (count attrs))))
+
 (defn make-directive [attr]
   (cond (= (:key attr) :solo) "genkp"
-        (= (:val attr) :solo) "genvp"
+        (= (:value attr) :solo) "genvp"
         (string? (:key attr)) "genk"
-        (string? (:val attr)) "genp"
+        (string? (:value attr)) "genv"
         :else (throw (ex-info "Couldn't make directive for attr." {:attr attr}))))
 
 (defn make-attr-name [attr]
   (let [k (:key attr)
-        v (:val attr)]
+        v (:value attr)]
     (when (not (or (= k :solo) (= v :solo)))
       (or k v))))
+
+(defn make-qualifier [attr]
+  (when (= (:qualifier attr) :sometimes)
+    "sometimes"))
 
 (defn make-generator [attr]
   (if (:dep attr)
@@ -171,14 +201,15 @@
   (let [directive (make-directive attr)
         topic (:topic-name attr)
         attr-name (make-attr-name attr)
+        qualifier (make-qualifier attr)
         generator (make-generator attr)
-        parts (filter (comp not nil?) [directive topic attr-name generator])]
+        parts (filter (comp not nil?) [directive topic attr-name qualifier generator])]
     (s/join "." parts)))
 
 (defn resolve-dep-ns [ns*]
   (case ns*
     :key "key"
-    :val "value"))
+    :value "value"))
 
 (defn make-prop-val [attr]
   (if (:dep attr)
@@ -187,12 +218,22 @@
       (s/join "." parts))
     (rand-nth expressions)))
 
+(defn make-props [attr]
+  (if (= (:qualifier attr) :sometimes)
+    (let [without-dep (dissoc attr :dep)
+          k1 (make-prop-key attr)
+          v1 (make-prop-val attr)
+          k2 (make-prop-key without-dep)
+          v2 (make-prop-val without-dep)]
+      {k1 v1
+       k2 v2})
+    {(make-prop-key attr) (make-prop-val attr)}))
+
 (defn construct-props [attrs]
   (reduce
    (fn [all attr]
-     (let [k (make-prop-key attr)
-           v (make-prop-val attr)]
-       (assoc all k v)))
+     (let [m (make-props attr)]
+       (merge all m)))
    {}
    attrs))
 
@@ -200,39 +241,74 @@
   (let [dag (gen-topic-dag)]
     (gen/let [flattened (flatten-dag dag)
               with-keys (choose-kv-kind flattened :key)
-              with-vals (choose-kv-kind with-keys :val)]
-      (let [by-topic (index-by-topic with-vals)
-            attrs (flatten-attrs with-vals)]
-        (gen/let [with-deps (choose-deps attrs)
+              with-vals (choose-kv-kind with-keys :value)]
+      (let [without-orphans (remove-orphan-topics with-vals)
+            by-topic (index-by-topic without-orphans)
+            flat-attrs (flatten-attrs without-orphans)]
+        (gen/let [with-deps (choose-deps flat-attrs)
                   with-dep-ns (choose-dep-ns with-deps)
-                  with-dep-attr (choose-dep-attr by-topic with-dep-ns)]
-          (let [attrs (dissoc-dep-choices with-dep-attr)
+                  with-dep-attr (choose-dep-attr by-topic with-dep-ns)
+                  with-qualifier (choose-qualifier with-dep-attr)]
+          (let [attrs (dissoc-dep-choices with-qualifier)
                 kvs (construct-props attrs)]
-            kvs))))))
+            {:props kvs
+             :topics (into #{} (keys by-topic))
+             :by-topic by-topic}))))))
 
+(defn validate-data-type [by-topic event ns*]
+  (let [expected (get-in by-topic [(:topic event) ns*])
+        actual (get-in event [:event ns*])]
+    (cond (= expected :solo)
+          (is (not (coll? actual)))
 
-(defspec no-livelock
+          (map? expected)
+          (is (coll? actual))
+
+          (nil? expected)
+          (is (nil? actual))
+
+          :else
+          (throw (ex-info "Data type was an unexpected."
+                          {:expected expected :actual actual})))))
+
+(comment (property-test))
+
+(defspec property-test
   100
   (prop/for-all
-   [props (generate-props)]
-   (let [context (atom (c/make-context props))
-         records (atom [])
-         iterations 50]
+   [{:keys [props topics by-topic]} (generate-props)]
+   (if (not (empty? props))
+     (let [context (atom (c/make-context props))
+           records (atom [])
+           iterations 500]
 
-     (doseq [_ (range iterations)]
-       (swap! context c/advance-until-success)
-       (swap! records conj (:generated @context)))
+       (doseq [_ (range iterations)]
+         (swap! context c/advance-until-success)
+         (swap! records conj (:generated @context)))
 
-     (= (count @records) iterations))))
+       (let [events @records]
+         ;; It doesn't livelock.
+         (is (= (count events) iterations))
+         
+         (doseq [event events]
+
+           ;; Every record is generated for a topic in the props.
+           (is (contains? topics (:topic event)))
+
+           ;; Solo keys are scalar, complex keys are maps.
+           (validate-data-type by-topic event :key)
+
+           ;; Ditto values.
+           (validate-data-type by-topic event :value))
+
+         true))
+     true)))
+
+
 
 ;; 2. test sometimes
 
 ;; Props:
-;; - Every record has a topic that was defined already
-;; - :solo values are scalars, not maps
-;; - Non-solos are maps
-;; - undefined keys are nil
-;; - undefined vals are nil
 ;; - history never exceeds global max
 ;; - history never exceeds topic max if it's set
 ;; - matching always takes from the other topic
