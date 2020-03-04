@@ -6,7 +6,6 @@
   (:import [java.util Properties]
            [com.github.javafaker Faker]))
 
-
 ;; TODO Write tests
 ;; TODO Knob to control generation frequency, both globally + per topic // throttling
 

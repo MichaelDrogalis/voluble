@@ -253,6 +253,7 @@
                 kvs (construct-props attrs)]
             {:props kvs
              :topics (into #{} (keys by-topic))
+             :attrs attrs
              :by-topic by-topic}))))))
 
 (defn validate-data-type [by-topic event ns*]
@@ -271,12 +272,60 @@
           (throw (ex-info "Data type was an unexpected."
                           {:expected expected :actual actual})))))
 
+(defn index-by-attribute [ns->attrs]
+  (reduce-kv
+   (fn [all ns* attrs]
+     (let [by-attr (group-by (fn [attr] (or (:key attr) (:value attr))) attrs)
+           as-attr (into {} (map (fn [[k v]] [k (first v)]) by-attr))]
+       (assoc all ns* as-attr)))
+   {}
+   ns->attrs))
+
+(defn build-attributes-index [attrs]
+  (let [topic->attrs (group-by :topic-name attrs)]
+    (reduce-kv
+     (fn [all k vs]
+       (let [ns->attrs (group-by (fn [v] (if (:key v) :key :value)) vs)
+             ns->attr (index-by-attribute ns->attrs)]
+         (assoc all k ns->attr)))
+     {}
+     topic->attrs)))
+
+(defn validate-attribute-dependency [event-index attr x]
+  (when (:dep attr)
+    (let [ks (filter (comp not nil?) [(:dep attr) (:dep-ns attr) (:dep-attr attr)])
+          target (get-in event-index ks)]
+      (when (and (not (and (nil? target) (nil? x)))
+                 (not= (:qualifier attr) :sometimes))
+        (is (contains? target x))))))
+
+(defn validate-dependencies [indexed-attrs event-index ns* event]
+  (let [t (:topic event)
+        x (get-in event [:event ns*])]
+    (if (coll? x)
+      (doseq [[k v] x]
+        (let [attr (get-in indexed-attrs [t ns* k])]
+          (validate-attribute-dependency event-index attr v)))
+      (let [attr (get-in indexed-attrs [t ns* :solo])]
+        (validate-attribute-dependency event-index attr x)))))
+
+(defn index-event [index ns* event]
+  (let [t (:topic event)
+        x (get-in event [:event ns*])]
+    (if (coll? x)
+      (reduce-kv
+       (fn [i k v]
+         (update-in i [t ns* k] (fnil conj #{}) v))
+       index
+       x)
+      (update-in index [t ns*] (fnil conj #{}) x))))
+
 (comment (property-test))
 
 (defspec property-test
-  100
+  150
   (prop/for-all
-   [{:keys [props topics by-topic]} (generate-props)]
+   [{:keys [props topics attrs by-topic]} (generate-props)]
    (if (not (empty? props))
      (let [context (atom (c/make-context props))
            records (atom [])
@@ -286,12 +335,14 @@
          (swap! context c/advance-until-success)
          (swap! records conj (:generated @context)))
 
-       (let [events @records]
+       (let [events @records
+             event-index (atom {})
+             indexed-attrs (build-attributes-index attrs)]
+         
          ;; It doesn't livelock.
          (is (= (count events) iterations))
          
          (doseq [event events]
-
            ;; Every record is generated for a topic in the props.
            (is (contains? topics (:topic event)))
 
@@ -299,17 +350,30 @@
            (validate-data-type by-topic event :key)
 
            ;; Ditto values.
-           (validate-data-type by-topic event :value))
+           (validate-data-type by-topic event :value)
+
+           ;; Dependent values pre-exist in the right collection.
+           (validate-dependencies indexed-attrs @event-index :key event)
+           (validate-dependencies indexed-attrs @event-index :value event)
+
+           (swap! event-index index-event :key event)
+           (swap! event-index index-event :value event))
+
+         ;;(prn "Events")
+         ;;(clojure.pprint/pprint @event-index)
+         ;;(prn "Attrs")
+         ;;(clojure.pprint/pprint indexed-attrs)
+
+         
 
          true))
      true)))
 
 
 
-;; 2. test sometimes
+
 
 ;; Props:
 ;; - history never exceeds global max
 ;; - history never exceeds topic max if it's set
-;; - matching always takes from the other topic
 ;; - integrate different global/topic/attr settings
