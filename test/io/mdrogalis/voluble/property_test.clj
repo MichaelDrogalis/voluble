@@ -323,7 +323,7 @@
 (comment (property-test))
 
 (defspec property-test
-  150
+  50
   (prop/for-all
    [{:keys [props topics attrs by-topic]} (generate-props)]
    (if (not (empty? props))
@@ -358,14 +358,6 @@
 
            (swap! event-index index-event :key event)
            (swap! event-index index-event :value event))
-
-         ;;(prn "Events")
-         ;;(clojure.pprint/pprint @event-index)
-         ;;(prn "Attrs")
-         ;;(clojure.pprint/pprint indexed-attrs)
-
-         
-
          true))
      true)))
 

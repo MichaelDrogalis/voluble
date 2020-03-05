@@ -113,19 +113,25 @@
 
 (defn parse-global-value [{:keys [config] :as parsed-k} v]
   (cond (= config ["history" "records" "max"])
-        (Integer/parseInt v)
+        (Long/parseLong v)
 
         (= config ["matching" "rate"])
         (Double/parseDouble v)
+
+        (= config ["throttle" "ms"])
+        (Long/parseLong v)
 
         :else v))
 
 (defn parse-topic-value [{:keys [config] :as parsed-k} v]
   (cond (= config ["history" "records" "max"])
-        (Integer/parseInt v)
+        (Long/parseLong v)
 
         (= config ["tombstone" "rate"])
         (Double/parseDouble v)
+
+        (= config ["throttle" "ms"])
+        (Long/parseLong v)
 
         :else v))
 

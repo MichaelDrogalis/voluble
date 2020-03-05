@@ -111,9 +111,10 @@
                "genp.c.KAz.matching" "VE.key",
                "genp.RCkl.C6S.matching" "VE.key",
                "genvp.VE.with" "#{Address.postcode}",
-               "genkp.c.with" "#{Name.title.descriptor}"}
+               "genkp.c.with" "#{Name.title.descriptor}"
+
+               "global.throttle.ms" "250"}
         context (make-context props)
         f (com.github.javafaker.Faker.)]
-    (time
-     (doseq [_ (range 100000)]
-       (generate-source-record context)))))
+    (doseq [_ (range 250)]
+      (prn (generate-source-record context)))))
