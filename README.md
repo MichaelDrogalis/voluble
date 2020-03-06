@@ -250,6 +250,12 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 
 If Voluble doesn't do something you want it to, feel free to open and issue or submit a patch.
 
+## Things to add in the future
+
+- Bounded data sets: Exactly N events are generated to a topic. No more, no less.
+- Maximal unique values: `within` generates at most N unique values.
+- Distributions: `matching` selects with a uniform, normal, etc distribution
+
 ## License
 
 Copyright © 2020 Michael Drogalis

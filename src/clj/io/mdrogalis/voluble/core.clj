@@ -6,14 +6,6 @@
   (:import [java.util Properties]
            [com.github.javafaker Faker]))
 
-;; TODO Write tests
-
-
-;; TODO bounded data sets
-;; TODO timestamp math
-;; TODO distributions
-;; TODO Scoped events
-
 (def max-failed-attempts 100)
 
 (def default-max-history 1000000)
