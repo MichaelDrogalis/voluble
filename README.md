@@ -2,7 +2,6 @@
 
 [![CircleCI](https://circleci.com/gh/MichaelDrogalis/voluble.svg?style=svg)](https://circleci.com/gh/MichaelDrogalis/voluble)
 
-
 When working with Apache Kafka, you often find yourself wanting to continuously populate your topics with something that approximates the shape of your production data. Voluble solves that problem. The primary things it supports are:
 
 - Creating realistic data by integrating with [Java Faker](https://github.com/DiUS/java-faker)
@@ -221,7 +220,7 @@ Useful for modeling stream/stream joins.
 'genkp.teamB.sometimes.matching' = 'teamA.key'
 ```
 
-## Reference
+## Configuration
 
 Voluble has a few other knobs for controlling useful properties. Some properties can be defined at the attribute, topic, and global level. The most granular scope takes precedence (topic over global, etc).
 
@@ -244,6 +243,29 @@ Sometimes when you're generating complex values, you might want the value for a 
 ### History capacity
 
 To perform `matching` expressions, Voluble needs to keep the history of previously generated records for each topic. By default, only the most recent `1,000,000` records are kept per topic. You can override this per topic with `topic.<topic>.history.records.max` = `n`, or globally with `global.history.records.max` = `n`.
+
+## Reference
+
+| Form  | Default value |
+| ----- | ------------- |
+| `(genkp|genvp).<topic>.with` | unset |
+| `(genk|genv).<topic>.<attr>.with` | unset |
+| `(genkp|genvp).<topic>.matching` | unset |
+| `(genk|genv).<topic>.<attr>.matching` | unset |
+| `(genkp|genvp).<topic>.sometimes.with` | unset |
+| `(genk|genv).<topic>.<attr>.sometimes.with` | unset |
+| `(genkp|genvp).<topic>.sometimes.matching` | unset |
+| `(genk|genv).<topic>.<attr>.sometimes.matching` | unset |
+| `global.throttle.ms | `0` |
+| `topic.<topic>.throttle.ms` | unset |
+| `topic.<topic>.tombstone.rate` | `0` |
+| `(attrkp|attrvp).<topic>.null.rate | `0` |
+| `(attrk|attrv).<topic>.<attr>.null.rate | `0` |
+| `global.history.records.max` | `1000000` |
+| `topic.<topic>.history.records.max` | unset |
+| `global.matching.rate` | `0.1` |
+| `(attrkp|attrvp).<topic>.<attr>.matching.rate` | unset |
+| `(attrk|attrv).<topic>.<attr>.matching.rate` | unset |
 
 ## Limitations
 
