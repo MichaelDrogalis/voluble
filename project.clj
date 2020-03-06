@@ -15,8 +15,7 @@
    {:global-vars {*warn-on-reflection* true}
     :dependencies [[org.clojure/test.check "1.0.0"]
                    [com.gfredericks/test.chuck "0.2.10"]
-                   [com.theinternate/generators.graph "0.0-37"]
-                   [criterium "0.4.5"]]}
+                   [com.theinternate/generators.graph "0.0-37"]]}
    :uberjar
    {:aot :all
     :uberjar-name "voluble-uberjar-%s.jar"}})

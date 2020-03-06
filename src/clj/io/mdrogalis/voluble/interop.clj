@@ -1,6 +1,5 @@
 (ns io.mdrogalis.voluble.interop
-  (:require [io.mdrogalis.voluble.core :as c]
-            [criterium.core :as crit])
+  (:require [io.mdrogalis.voluble.core :as c])
   (:import [java.util HashMap]
            [java.util ArrayList]
            [org.apache.kafka.connect.source SourceRecord]

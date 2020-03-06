@@ -96,6 +96,10 @@ When you run this connector, you'll get data looking roughly like the following:
 ]
 ```
 
+## Installation
+
+I haven't published this to Maven or Confluent Hub yet, so just download the repo and build it locally. Install the uberjar on the classpath of Connect and you're good to go.
+
 ## Usage
 
 All configuration for Voluble is done through properties that are passed to the connector.
@@ -133,10 +137,6 @@ Qualifiers let you control how generators work. Right now there is only one qual
 When a `with` generator is used, the value is passed verbatim to Java Faker to create a value. Java Faker has a huge number of categories that it can generate data for. Just check out the project to get a sense for what you can do. Under the covers, the [`expression` method](https://github.com/DiUS/java-faker/blob/7ac7e53aa2e9a3d39c1e663ddf62b1feb625b060/src/main/java/com/github/javafaker/Faker.java#L636-L654) of Faker is being invoked to dynamically create data without going through its Java classes.
 
 If you get stuck generating something that you want, just instantiate Faker directly in a Java program and call `faker.expression()` until you get the thing you're looking for.
-
-## Installation
-
-I haven't published this to Maven or Confluent Hub yet, so just download the repo and build it locally. Install the uberjar on the classpath of Connect and you're good to go.
 
 ## More examples
 
