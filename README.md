@@ -132,7 +132,7 @@ There are two types of generators: `with` and `matching`. `with` takes a Java Fa
 
 #### Qualifier
 
-Qualifiers let you control how generators work. Right now there is only one qualifier: `sometimes`. Sometimes you want to generate data that matches another topic, but not always. This is useful if you're modeling a single topic who's key's represent mutability. Or maybe you want to model a stream/stream join. `sometimes` allows you to control the probability that Voluble will generate a matching value versus a brand new one. You'd use it roughly like the following: `genv.users.team.sometimes.matching` = `team.key.name`, `genv.users.team.sometimes.with` = '#{Team.name}'. When you use `sometimes`, you need to specify both `matching` and `with`. By default there is now a `0.1` probability rate of matching, instead of `1`. You can control the probability to suit your circumstances (see the reference section).
+Qualifiers let you control how generators work. Right now there is only one qualifier: `sometimes`. Sometimes you want to generate data that matches another topic, but not always. This is useful if you're modeling a single topic who's key's represent mutability. Or maybe you want to model a stream/stream join. `sometimes` allows you to control the probability that Voluble will generate a matching value versus a brand new one. You'd use it roughly like the following: `genv.users.team.sometimes.matching` = `team.key.name`, `genv.users.team.sometimes.with` = '#{Team.name}'. When you use `sometimes`, you need to specify both `matching` and `with`. By default there is now a `0.1` probability rate of matching, instead of `1`. You can control the probability to suit your circumstances (see the configuration section).
 
 #### Expressions
 
@@ -248,26 +248,26 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 
 | Key form  | Value form | Default value | Meaning |
 | --------- | ---------- | ------------- | ------- |
-| `(genkp\|genvp).<topic>.with` | `"#{expr}"` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a primitive type for the key or value.
-| `(genk\|genv).<topic>.<attr>.with` | `"#{expr}"` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a map for the key or value. The map has form: `<attr>` -> Java Faker expr.
+| `(genkp\|genvp).<topic>.with` | `#{expr}` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a primitive type for the key or value. |
+| `(genk\|genv).<topic>.<attr>.with` | `#{expr}` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a map for the key or value. The map has form: `<attr>` -> Java Faker expr. |
+| `(genkp\|genvp).<topic>.matching` | `<src>.(key|value).[attr?]` | unset | Makes a new record and sends it to `<topic>`. The key or value of the record is derived from a previous record produced to topic `<src>`'s key or value. Can optionally drill into an attribute of the resulting value. The value will be supplied as a primitive value to the new record. |
+| `(genk\|genv).<topic>.<attr>.matching` | `<src>.(key|value).[attr?]` | unset | Makes a new record and sends it to `<topic>`. The key or value of the record is derived from a previous record produced to topic `<src>`'s key or value. Can optionally drill into an attribute of the resulting value. The value will be a map with form:  `<attr>` -> derived value. |
+| `(genkp\|genvp).<topic>.sometimes.with` | `#{expr}` | unset | Makes a new record and sends it to `<topic>`. Same semantics as `with` without `sometimes`. Will be chosen according to the specified matching rate. When present, `sometimes.matching` must also be included. |
+| `(genk\|genv).<topic>.<attr>.sometimes.with` | `#{expr}` | unset | Makes a new record and sends it to `<topic>`. Same semantics as `with` without `sometimes`. Will be chosen according to the specified matching rate. When present, `sometimes.matching` must also be included. |
+| `(genkp\|genvp).<topic>.sometimes.matching` | `<src>.(key|value).[attr?]` | unset | Makes a new record and sends it to `<topic>`. Same semantics as `matching` without `sometimes`. Will be chosen according to the specified matching rate. When present, `sometimes.with` must also be included. |
+| `(genk\|genv).<topic>.<attr>.sometimes.matching` | `<src>.(key|value).[attr?]` | unset | Makes a new record and sends it to `<topic>`. Same semantics as `matching` without `sometimes`. Will be chosen according to the specified matching rate. When present, `sometimes.with` must also be included. |
 
 
-| `(genkp\|genvp).<topic>.matching` | unset | Makes a new record and sends it to `<topic>`.
-| `(genk\|genv).<topic>.<attr>.matching` | unset | Makes a new record and sends it to `<topic>`.
-| `(genkp\|genvp).<topic>.sometimes.with` | unset | Makes a new record and sends it to `<topic>`.
-| `(genk\|genv).<topic>.<attr>.sometimes.with` | unset | Makes a new record and sends it to `<topic>`.
-| `(genkp\|genvp).<topic>.sometimes.matching` | unset | Makes a new record and sends it to `<topic>`.
-| `(genk\|genv).<topic>.<attr>.sometimes.matching` | unset | Makes a new record and sends it to `<topic>`.
-| `global.throttle.ms` | `0` |
-| `topic.<topic>.throttle.ms` | unset |
-| `topic.<topic>.tombstone.rate` | `0` |
-| `(attrkp\|attrvp).<topic>.null.rate` | `0` |
-| `(attrk\|attrv).<topic>.<attr>.null.rate` | `0` |
-| `global.history.records.max` | `1000000` |
-| `topic.<topic>.history.records.max` | unset |
-| `global.matching.rate` | `0.1` |
-| `(attrkp\|attrvp).<topic>.<attr>.matching.rate` | unset |
-| `(attrk\|attrv).<topic>.<attr>.matching.rate` | unset |
+| `global.throttle.ms` | `<long>` | `0` |
+| `topic.<topic>.throttle.ms` | `<long>` | unset |
+| `topic.<topic>.tombstone.rate` | `<double>` | `0` |
+| `(attrkp\|attrvp).<topic>.null.rate` | `<double>` | `0` |
+| `(attrk\|attrv).<topic>.<attr>.null.rate` | `<double>` | `0` |
+| `global.history.records.max` | `<long>` | `1000000` |
+| `topic.<topic>.history.records.max` | `<long>` | unset |
+| `global.matching.rate` | `<double>` | `0.1` |
+| `(attrkp\|attrvp).<topic>.<attr>.matching.rate` | `<double>` | unset |
+| `(attrk\|attrv).<topic>.<attr>.matching.rate` | `<double>` | unset |
 
 ## Limitations
 
