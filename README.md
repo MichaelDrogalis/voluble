@@ -222,6 +222,10 @@ Useful for modeling stream/stream joins.
 
 Voluble has a few other knobs for controlling useful properties. Some properties can be defined at the attribute, topic, and global level. The most granular scope takes precedence (topic over global, etc).
 
+### Throttling
+
+By default, Voluble will try to generate data to Kafka as fast as possible. But sometimes this is simply too much. You can throttle how fast data is generated with `global.throttle.ms`, or per topic with `topic.<topic>.throttle.ms`.
+
 ### Matching probability
 
 When you use the `sometimes` qualifier, the rate of matching is reduced from a certainty (`1`) to `0.1`. You can control this probability at both the global and attribute level. To alter the matching rate global, configure `global.matching.rate` to be a value between `0` and `1`. To configure it at the attribute level, configure it roughly like `attrk.<topic>.<attribute>.matching.rate`. Attribute configuration mirrors generator configuration: `attrk`, `attrkp`, `attrv`, and `attrvp` the same as generators.
