@@ -248,8 +248,8 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 
 | Key form  | Value form | Default value | Meaning |
 | --------- | ---------- | ------------- | ------- |
-| `(genkp\|genvp).<topic>.with` | `"#{expression}"` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a primitive type for the key or value.
-| `(genk\|genv).<topic>.<attr>.with` | `"#{expression}"` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a map for the key or value. The map has form: `<attr>` -> Java Faker expr.
+| `(genkp\|genvp).<topic>.with` | `"#{expr}"` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a primitive type for the key or value.
+| `(genk\|genv).<topic>.<attr>.with` | `"#{expr}"` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a map for the key or value. The map has form: `<attr>` -> Java Faker expr.
 
 
 | `(genkp\|genvp).<topic>.matching` | unset | Makes a new record and sends it to `<topic>`.
