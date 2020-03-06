@@ -246,7 +246,7 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 
 - There is no built-in support for multi-schema topics. If you want to do this, just create multiple instances of Voluble with different generator configurations.
 - There is not yet support for deeply nested complex keys or values. That is, it can only generate maps with a single layer of keys.
-- Voluble doesn't yet validate that you're not asking for something impossible, like a circular dependency. If it'=s internal state machine can't advance and generate a new event after `100` iterations, the connector will permanently abort.
+- Voluble doesn't yet validate that you're not asking for something impossible, like a circular dependency. If it's internal state machine can't advance and generate a new event after `100` iterations, the connector will permanently abort.
 
 If Voluble doesn't do something you want it to, feel free to open and issue or submit a patch.
 
