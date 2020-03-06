@@ -259,12 +259,12 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 | `global.throttle.ms` | `<long>` | `0` | Wait at least this number of milliseconds before producing a new record for each topic. |
 | `topic.<topic>.throttle.ms` | `<long>` | unset | Wait at least this number of milliseconds before producing a new record for `<topic>`. Overrides its global sibling. |
 | `topic.<topic>.tombstone.rate` | `<double>` | `0` | Probability of producing a record to `<topic>` with a tombstone (null) value. Must be a value between `0` and `1`. |
-| `(attrkp\|attrvp).<topic>.<attr>.null.rate` | `<double>` | `0` | Probability of producing a record to `<topic>` with attribute `<attr>` as null. Must be a value between `0` and `1`. |
+| `(attrkp\|attrvp).<topic>.null.rate` | `<double>` | `0` | Probability of producing a record to `<topic>` with key or value as null. Must be a value between `0` and `1`. |
 | `(attrk\|attrv).<topic>.<attr>.null.rate` | `<double>` | `0` | Probability of producing a record to `<topic>` the key or value as null. Must be a value between `0` and `1`. |
 | `global.history.records.max` | `<long>` | `1000000` | The maximum number of records to remember for matching for each topic. The oldest records will be deleted first. |
 | `topic.<topic>.history.records.max` | `<long>` | unset | The maximum number of records to remember for matching for `<topic>`. The oldest records will be deleted first. Overrides its global sibling. |
 | `global.matching.rate` | `<double>` | `0.1` | Probability of matching when `sometimes` is used anywhere. Must be a value between `0` and `1`. |
-| `(attrkp\|attrvp).<topic>.<attr>.matching.rate` | `<double>` | unset | Probability of matching when `sometimes` is used for `<topic>` with `<attr>`. Must be a value between `0` and `1`. Overrides its global sibling. |
+| `(attrkp\|attrvp).<topic>.matching.rate` | `<double>` | unset | Probability of matching when `sometimes` is used for `<topic>`. Must be a value between `0` and `1`. Overrides its global sibling. |
 | `(attrk\|attrv).<topic>.<attr>.matching.rate` | `<double>` | unset | Probability of matching when `sometimes` is used for `<topic>` with `<attr>`. Must be a value between `0` and `1`. Overrides its global sibling. |
 
 ## Limitations
