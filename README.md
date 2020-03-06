@@ -256,8 +256,6 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 | `(genk\|genv).<topic>.<attr>.sometimes.with` | `#{expr}` | unset | Makes a new record and sends it to `<topic>`. Same semantics as `with` without `sometimes`. Will be chosen according to the specified matching rate. When present, `sometimes.matching` must also be included. |
 | `(genkp\|genvp).<topic>.sometimes.matching` | `<src>.(key\|value).[attr?]` | unset | Makes a new record and sends it to `<topic>`. Same semantics as `matching` without `sometimes`. Will be chosen according to the specified matching rate. When present, `sometimes.with` must also be included. |
 | `(genk\|genv).<topic>.<attr>.sometimes.matching` | `<src>.(key\|value).[attr?]` | unset | Makes a new record and sends it to `<topic>`. Same semantics as `matching` without `sometimes`. Will be chosen according to the specified matching rate. When present, `sometimes.with` must also be included. |
-
-
 | `global.throttle.ms` | `<long>` | `0` | Wait at least this number of milliseconds before producing a new record for each topic. |
 | `topic.<topic>.throttle.ms` | `<long>` | unset | Wait at least this number of milliseconds before producing a new record for `<topic>`. Overrides its global sibling. |
 | `topic.<topic>.tombstone.rate` | `<double>` | `0` | Probability of producing a record to `<topic>` with a tombstone (null) value. Must be a value between `0` and `1`. |
