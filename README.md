@@ -246,16 +246,18 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 
 ## Reference
 
-| Form  | Default value | Meaning |
-| ----- | ------------- | ------- |
-| `(genkp\|genvp).<topic>.with` | unset | Evaluates the Java Faker expression and sends it to `<topic>` as a primitive in the key or value of the record. |
-| `(genk\|genv).<topic>.<attr>.with` | unset | |
-| `(genkp\|genvp).<topic>.matching` | unset |
-| `(genk\|genv).<topic>.<attr>.matching` | unset |
-| `(genkp\|genvp).<topic>.sometimes.with` | unset |
-| `(genk\|genv).<topic>.<attr>.sometimes.with` | unset |
-| `(genkp\|genvp).<topic>.sometimes.matching` | unset |
-| `(genk\|genv).<topic>.<attr>.sometimes.matching` | unset |
+| Key form  | Value form | Default value | Meaning |
+| --------- | ---------- | ------------- | ------- |
+| `(genkp\|genvp).<topic>.with` | `"#{expression}"` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a primitive type for the key or value.
+| `(genk\|genv).<topic>.<attr>.with` | `"#{expression}"` | unset | Makes a new record and sends it to `<topic>`. Evaluates the Java Faker expression and supplies it as a map for the key or value. The map has form: `<attr>` -> Java Faker expr.
+
+
+| `(genkp\|genvp).<topic>.matching` | unset | Makes a new record and sends it to `<topic>`.
+| `(genk\|genv).<topic>.<attr>.matching` | unset | Makes a new record and sends it to `<topic>`.
+| `(genkp\|genvp).<topic>.sometimes.with` | unset | Makes a new record and sends it to `<topic>`.
+| `(genk\|genv).<topic>.<attr>.sometimes.with` | unset | Makes a new record and sends it to `<topic>`.
+| `(genkp\|genvp).<topic>.sometimes.matching` | unset | Makes a new record and sends it to `<topic>`.
+| `(genk\|genv).<topic>.<attr>.sometimes.matching` | unset | Makes a new record and sends it to `<topic>`.
 | `global.throttle.ms` | `0` |
 | `topic.<topic>.throttle.ms` | unset |
 | `topic.<topic>.tombstone.rate` | `0` |
