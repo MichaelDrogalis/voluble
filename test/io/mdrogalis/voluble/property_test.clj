@@ -320,10 +320,8 @@
        x)
       (update-in index [t ns*] (fnil conj #{}) x))))
 
-(comment (property-test))
-
 (defspec property-test
-  50
+  150
   (prop/for-all
    [{:keys [props topics attrs by-topic]} (generate-props)]
    (if (not (empty? props))
@@ -360,9 +358,6 @@
            (swap! event-index index-event :value event))
          true))
      true)))
-
-
-
 
 
 ;; Props:
