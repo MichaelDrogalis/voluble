@@ -246,21 +246,21 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 
 ## Reference
 
-| Form  | Default value |
-| ----- | ------------- |
-| `(genkp\|genvp).<topic>.with` | unset |
-| `(genk\|genv).<topic>.<attr>.with` | unset |
+| Form  | Default value | Meaning |
+| ----- | ------------- | ------- |
+| `(genkp\|genvp).<topic>.with` | unset | Evaluates the Java Faker expression and sends it to `<topic>` as a primitive in the key or value of the record. |
+| `(genk\|genv).<topic>.<attr>.with` | unset | |
 | `(genkp\|genvp).<topic>.matching` | unset |
 | `(genk\|genv).<topic>.<attr>.matching` | unset |
 | `(genkp\|genvp).<topic>.sometimes.with` | unset |
 | `(genk\|genv).<topic>.<attr>.sometimes.with` | unset |
 | `(genkp\|genvp).<topic>.sometimes.matching` | unset |
 | `(genk\|genv).<topic>.<attr>.sometimes.matching` | unset |
-| `global.throttle.ms | `0` |
+| `global.throttle.ms` | `0` |
 | `topic.<topic>.throttle.ms` | unset |
 | `topic.<topic>.tombstone.rate` | `0` |
-| `(attrkp\|attrvp).<topic>.null.rate | `0` |
-| `(attrk\|attrv).<topic>.<attr>.null.rate | `0` |
+| `(attrkp\|attrvp).<topic>.null.rate` | `0` |
+| `(attrk\|attrv).<topic>.<attr>.null.rate` | `0` |
 | `global.history.records.max` | `1000000` |
 | `topic.<topic>.history.records.max` | unset |
 | `global.matching.rate` | `0.1` |
