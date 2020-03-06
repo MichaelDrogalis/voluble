@@ -1,5 +1,8 @@
 # voluble
 
+[![CircleCI](https://circleci.com/gh/MichaelDrogalis/voluble.svg?style=svg)](https://circleci.com/gh/MichaelDrogalis/voluble)
+
+
 When working with Apache Kafka, you often find yourself wanting to continuously populate your topics with something that approximates the shape of your production data. Voluble solves that problem. The primary things it supports are:
 
 - Creating realistic data by integrating with [Java Faker](https://github.com/DiUS/java-faker)
