@@ -81,37 +81,40 @@
       context)))
 
 (defn advance-step [context]
-  (let [topic (first (:topic-seq context))
-        last-ts (get-in context [:timestamps topic])
-        throttle (get-in context [:generators topic :throttle-ns])
-        next-ts (+ last-ts throttle)
-        now (System/nanoTime)]
-    (if (>= now next-ts)
-      (let [deps (get-in context [:generators topic :dependencies])
-            key-gen-f (get-in context [:generators topic :key] default-generator)
-            val-gen-f (get-in context [:generators topic :value] default-generator)
-            {:keys [key-results val-results]} (g/invoke-generator context deps key-gen-f val-gen-f)]
-        (if (and (:success? key-results) (:success? val-results))
-          (let [event {:key (:result key-results) :value (:result val-results)}
-                retire-fn (get-in context [:generators topic :retire-fn])]
+  (if-let [topic (first (:topic-seq context))]
+    (let [last-ts (get-in context [:timestamps topic])
+          throttle (get-in context [:generators topic :throttle-ns])
+          next-ts (+ last-ts throttle)
+          now (System/nanoTime)]
+      (if (>= now next-ts)
+        (let [deps (get-in context [:generators topic :dependencies])
+              key-gen-f (get-in context [:generators topic :key] default-generator)
+              val-gen-f (get-in context [:generators topic :value] default-generator)
+              {:keys [key-results val-results]} (g/invoke-generator context deps key-gen-f val-gen-f)]
+          (if (and (:success? key-results) (:success? val-results))
+            (let [event {:key (:result key-results) :value (:result val-results)}
+                  retire-fn (get-in context [:generators topic :retire-fn])]
+              (-> context
+                  (assoc-in [:generated :status] :success)
+                  (assoc-in [:generated :topic] topic)
+                  (assoc-in [:generated :event :key] (:result key-results))
+                  (assoc-in [:generated :event :value] (:result val-results))
+                  (assoc-in [:timestamps topic] now)
+                  (update-in [:history topic] (fnil conj []) event)
+                  (update-in [:records-produced topic] inc)
+                  (retire-fn)
+                  (purge-history topic)))
             (-> context
-                (assoc-in [:generated :status] :success)
-                (assoc-in [:generated :topic] topic)
-                (assoc-in [:generated :event :key] (:result key-results))
-                (assoc-in [:generated :event :value] (:result val-results))
-                (assoc-in [:timestamps topic] now)
-                (update-in [:history topic] (fnil conj []) event)
-                (update-in [:records-produced topic] inc)
-                (retire-fn)
-                (purge-history topic)))
-          (-> context
-              (dissoc :generated)
-              (assoc-in [:generated :status] :failed)
-              (update :topic-seq rest))))
-      (-> context
-          (dissoc :generated)
-          (assoc-in [:generated :status] :throttled)
-          (update :topic-seq rest)))))
+                (dissoc :generated)
+                (assoc-in [:generated :status] :failed)
+                (update :topic-seq rest))))
+        (-> context
+            (dissoc :generated)
+            (assoc-in [:generated :status] :throttled)
+            (update :topic-seq rest))))
+    (-> context
+        (dissoc :generated)
+        (assoc-in [:generated :status] :drained))))
 
 (defn maybe-backoff! [context attempts]
   (let [n-topics (count (keys (:generators context)))]
@@ -135,7 +138,7 @@
       (throw (ex-info "Couldn't generate another event. State machine may be livelocked."
                       {:context context}))
       (let [status (get-in new-context [:generated :status])]
-        (cond (= status :success)
+        (cond (contains? #{:success :drained} status)
               new-context
 
               (= status :failed)

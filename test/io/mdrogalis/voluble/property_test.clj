@@ -64,6 +64,21 @@
       dag))
    dag-gen))
 
+(defn choose-topic-bounds [topics]
+  (gen/fmap
+   (fn [caps]
+     (reduce
+      (fn [all [n i]]
+        (if n
+          (let [topic-name (get-in topics [i :topic-name])]
+            (assoc-in all [topic-name :records-exactly] n))
+          all))
+      {}
+      (map vector caps (range))))
+   (gen/vector
+    (gen/frequency [[8 (gen/return nil)] [2 (gen/large-integer* {:min 1})]])
+    (count topics))))
+
 (defn choose-kv-kind [topics ns*]
   (gen/fmap
    (fn [kinds]
@@ -90,7 +105,8 @@
                      (into #{}))]
     (->> topics
          (remove (fn [t] (contains? orphans (:topic-name t))))
-         (map (fn [t] (update t :deps (fn [deps] (vec (remove (fn [d] (contains? orphans d)) deps)))))))))
+         (map (fn [t] (update t :deps (fn [deps] (vec (remove (fn [d] (contains? orphans d)) deps))))))
+         (vec))))
 
 (defn index-by-topic [topics]
   (reduce-kv
@@ -229,11 +245,20 @@
        k2 v2})
     {(make-prop-key attr) (make-prop-val attr)}))
 
-(defn construct-props [attrs]
+(defn construct-gen-props [attrs]
   (reduce
    (fn [all attr]
      (let [m (make-props attr)]
        (merge all m)))
+   {}
+   attrs))
+
+(defn construct-topic-props [attrs]
+  (reduce-kv
+   (fn [all topic configs]
+     (if-let [n (:records-exactly configs)]
+       (assoc all (format "topic.%s.records.exactly" topic) (str n))
+       all))
    {}
    attrs))
 
@@ -245,14 +270,17 @@
       (let [without-orphans (remove-orphan-topics with-vals)
             by-topic (index-by-topic without-orphans)
             flat-attrs (flatten-attrs without-orphans)]
-        (gen/let [with-deps (choose-deps flat-attrs)
+        (gen/let [topic-configs (choose-topic-bounds without-orphans)
+                  with-deps (choose-deps flat-attrs)
                   with-dep-ns (choose-dep-ns with-deps)
                   with-dep-attr (choose-dep-attr by-topic with-dep-ns)
                   with-qualifier (choose-qualifier with-dep-attr)]
           (let [attrs (dissoc-dep-choices with-qualifier)
-                kvs (construct-props attrs)]
+                kvs (merge (construct-gen-props attrs)
+                           (construct-topic-props topic-configs))]
             {:props kvs
              :topics (into #{} (keys by-topic))
+             :topic-configs topic-configs
              :attrs attrs
              :by-topic by-topic}))))))
 
@@ -320,26 +348,36 @@
        x)
       (update-in index [t ns*] (fnil conj #{}) x))))
 
+(defn remove-drained [events]
+  (remove (fn [event] (= (:status event) :drained)) events))
+
+(defn expected-records [topics topic-configs iterations]
+  (if (= (into #{} topics) (into #{} (keys topic-configs)))
+    (min iterations (apply + (map :records-exactly (vals topic-configs))))
+    iterations))
+
 (defspec property-test
   150
   (prop/for-all
-   [{:keys [props topics attrs by-topic]} (generate-props)]
+   [{:keys [props topics topic-configs attrs by-topic]} (generate-props)]
    (if (not (empty? props))
      (let [context (atom (c/make-context props))
            records (atom [])
+           topic-count (atom {})
            iterations 500]
 
        (doseq [_ (range iterations)]
          (swap! context c/advance-until-success)
          (swap! records conj (:generated @context)))
 
-       (let [events @records
+       (let [events (remove-drained @records)
              event-index (atom {})
              indexed-attrs (build-attributes-index attrs)]
          
          ;; It doesn't livelock.
-         (is (= (count events) iterations))
-         
+         (is (= (count events)
+                (expected-records (keys by-topic) topic-configs iterations)))
+
          (doseq [event events]
            ;; Every record is generated for a topic in the props.
            (is (contains? topics (:topic event)))
@@ -355,12 +393,23 @@
            (validate-dependencies indexed-attrs @event-index :value event)
 
            (swap! event-index index-event :key event)
-           (swap! event-index index-event :value event))
+           (swap! event-index index-event :value event)
+
+           (swap! topic-count update (:topic event) (fnil inc 0)))
+
+         ;; Bounded topics have exactly set don't exceed their count.
+         (let [topic-count-state @topic-count]
+           (doseq [[topic {:keys [records-exactly]}] topic-configs]
+             (is (<= (get topic-count-state topic) records-exactly))))
          true))
      true)))
 
-
-;; Props:
+;; Future props:
 ;; - history never exceeds global max
 ;; - history never exceeds topic max if it's set
-;; - integrate different global/topic/attr settings
+;; - nil-ish complex vals
+;; - tombstones
+;; - different global/topic/attr settings
+ 
+
+#_(clojure.test/run-tests)
