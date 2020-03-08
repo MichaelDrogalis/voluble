@@ -12,11 +12,13 @@ import org.apache.kafka.connect.source.SourceRecord;
 public class VolubleConnectorTask extends SourceTask {
 
     private final static IFn require = Clojure.var("clojure.core", "require");
+    private static String version;
     private IFn generateRecord;
     private Object context;
 
     static {
         require.invoke(Clojure.read("io.mdrogalis.voluble.interop"));
+        version = (String) Clojure.var("io.mdrogalis.voluble.interop", "pom-version").invoke();
     }
 
     @Override
@@ -37,7 +39,7 @@ public class VolubleConnectorTask extends SourceTask {
 
     @Override
     public String version() {
-        return System.getProperty("voluble.version");
+        return version;
     }
     
 }

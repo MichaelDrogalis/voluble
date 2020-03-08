@@ -1,11 +1,20 @@
 (ns io.mdrogalis.voluble.interop
-  (:require [io.mdrogalis.voluble.core :as c])
+  (:require [clojure.java.io :as io]
+            [io.mdrogalis.voluble.core :as c])
   (:import [java.util HashMap]
            [java.util ArrayList]
+           [java.util Properties]
            [org.apache.kafka.connect.source SourceRecord]
            [org.apache.kafka.connect.data SchemaBuilder]
            [org.apache.kafka.connect.data Schema]
            [org.apache.kafka.connect.data Struct]))
+
+(defn pom-version []
+  (-> (doto (Properties.)
+        (.load (-> "META-INF/maven/io.mdrogalis/voluble/pom.properties"
+                   (io/resource)
+                   (io/reader))))
+      (.get "version")))
 
 (defn make-context [props]
   (atom (c/make-context (into {} props))))
