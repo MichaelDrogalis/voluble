@@ -76,7 +76,7 @@
   (let [history (get-in context [:history topic])
         max-history (max-history-for-topic context topic)
         n (count history)]
-    (if (>= n max-history)
+    (if (> n max-history)
       (update-in context [:history topic] subvec 1 n)
       context)))
 

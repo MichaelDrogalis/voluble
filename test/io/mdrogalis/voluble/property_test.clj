@@ -79,6 +79,21 @@
     (gen/frequency [[8 (gen/return nil)] [2 (gen/large-integer* {:min 1})]])
     (count topics))))
 
+(defn choose-max-history [topics configs]
+  (gen/fmap
+   (fn [caps]
+     (reduce
+      (fn [all [n i]]
+        (if n
+          (let [topic-name (get-in topics [i :topic-name])]
+            (assoc-in all [topic-name :max-history] n))
+          all))
+      configs
+      (map vector caps (range))))
+   (gen/vector
+    (gen/frequency [[8 (gen/return nil)] [2 (gen/large-integer* {:min 1})]])
+    (count topics))))
+
 (defn choose-kv-kind [topics ns*]
   (gen/fmap
    (fn [kinds]
@@ -253,12 +268,26 @@
    {}
    attrs))
 
+(defmulti construct-topic-config-kv
+  (fn [topic k v]
+    k))
+
+(defmethod construct-topic-config-kv :records-exactly
+  [topic k v]
+  {(format "topic.%s.records.exactly" topic) (str v)})
+
+(defmethod construct-topic-config-kv :max-history
+  [topic k v]
+  {(format "topic.%s.history.records.max" topic) (str v)})
+
 (defn construct-topic-props [attrs]
   (reduce-kv
    (fn [all topic configs]
-     (if-let [n (:records-exactly configs)]
-       (assoc all (format "topic.%s.records.exactly" topic) (str n))
-       all))
+     (reduce-kv
+      (fn [all* k v]
+        (merge all* (construct-topic-config-kv topic k v)))
+      all
+      configs))
    {}
    attrs))
 
@@ -271,6 +300,7 @@
             by-topic (index-by-topic without-orphans)
             flat-attrs (flatten-attrs without-orphans)]
         (gen/let [topic-configs (choose-topic-bounds without-orphans)
+                  topic-configs (choose-max-history without-orphans topic-configs)
                   with-deps (choose-deps flat-attrs)
                   with-dep-ns (choose-dep-ns with-deps)
                   with-dep-attr (choose-dep-attr by-topic with-dep-ns)
@@ -351,10 +381,20 @@
 (defn remove-drained [events]
   (remove (fn [event] (= (:status event) :drained)) events))
 
+(defn only-bounded-topics [topic-configs]
+  (->> topic-configs
+       (keep (fn [[topic config]] (when (:records-exactly config) topic)))
+       (into #{})))
+
 (defn expected-records [topics topic-configs iterations]
-  (if (= (into #{} topics) (into #{} (keys topic-configs)))
+  (if (= (into #{} topics) (only-bounded-topics topic-configs))
     (min iterations (apply + (map :records-exactly (vals topic-configs))))
     iterations))
+
+(defn validate-history! [context topic-configs]
+  (doseq [[topic {:keys [max-history]}] topic-configs]
+    (when max-history
+      (is (<= (count (get-in context [:history topic])) max-history)))))
 
 (defspec property-test
   150
@@ -368,7 +408,11 @@
 
        (doseq [_ (range iterations)]
          (swap! context c/advance-until-success)
-         (swap! records conj (:generated @context)))
+         (let [state @context]
+           (swap! records conj (:generated state))
+
+           ;; History sizes never outgrow their max.
+           (validate-history! state topic-configs)))
 
        (let [events (remove-drained @records)
              event-index (atom {})
@@ -400,13 +444,13 @@
          ;; Bounded topics have exactly set don't exceed their count.
          (let [topic-count-state @topic-count]
            (doseq [[topic {:keys [records-exactly]}] topic-configs]
-             (is (<= (get topic-count-state topic) records-exactly))))
+             (when records-exactly
+               (is (<= (get topic-count-state topic) records-exactly)))))
          true))
      true)))
 
 ;; Future props:
 ;; - history never exceeds global max
-;; - history never exceeds topic max if it's set
 ;; - nil-ish complex vals
 ;; - tombstones
 ;; - different global/topic/attr settings
