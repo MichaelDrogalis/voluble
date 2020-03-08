@@ -37,7 +37,7 @@ public class VolubleConnectorTask extends SourceTask {
 
     @Override
     public String version() {
-        return "0.1.0";
+        return System.getProperty("voluble.version");
     }
     
 }
