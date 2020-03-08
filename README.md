@@ -8,7 +8,7 @@ When working with Apache Kafka, you often find yourself wanting to continuously 
 - Cross-topic relationships
 - Populating both keys and values of records
 - Making both primitive and complex values
-- Continous streaming of new data
+- Bounded or unbounded streams of data
 - Tombstoning
 
 Voluble ships as a [Kafka connector](https://docs.confluent.io/current/connect/index.html) to make it easy to scale and change serialization formats. You can use Kafka Connect through its REST API or integrated with [ksqlDB](http://ksqldb.io/). In this guide, I demonstrate using the latter, but the configuration is the same for both. I leave out Connect specific configuration like serializers and tasks that need to be configured for any connector.
