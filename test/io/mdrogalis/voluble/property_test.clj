@@ -79,6 +79,13 @@
     (gen/frequency [[8 (gen/return nil)] [2 (gen/large-integer* {:min 1})]])
     (count topics))))
 
+(defn gen-global-configs []
+  (gen/fmap
+   (fn [n]
+     (when n
+       {:max-history n}))
+   (gen/frequency [[8 (gen/return nil)] [2 (gen/large-integer* {:min 1})]])))
+
 (defn choose-max-history [topics configs]
   (gen/fmap
    (fn [caps]
@@ -291,6 +298,21 @@
    {}
    attrs))
 
+(defmulti construct-global-config-kv
+  (fn [k v]
+    k))
+
+(defmethod construct-global-config-kv :max-history
+  [k v]
+  {"global.history.records.max" (str v)})
+
+(defn construct-global-props [attrs]
+  (reduce-kv
+   (fn [all k v]
+     (merge all (construct-global-config-kv k v)))
+   {}
+   attrs))
+
 (defn generate-props []
   (let [dag (gen-topic-dag)]
     (gen/let [flattened (flatten-dag dag)
@@ -301,16 +323,19 @@
             flat-attrs (flatten-attrs without-orphans)]
         (gen/let [topic-configs (choose-topic-bounds without-orphans)
                   topic-configs (choose-max-history without-orphans topic-configs)
+                  global-configs (gen-global-configs)
                   with-deps (choose-deps flat-attrs)
                   with-dep-ns (choose-dep-ns with-deps)
                   with-dep-attr (choose-dep-attr by-topic with-dep-ns)
                   with-qualifier (choose-qualifier with-dep-attr)]
           (let [attrs (dissoc-dep-choices with-qualifier)
                 kvs (merge (construct-gen-props attrs)
-                           (construct-topic-props topic-configs))]
+                           (construct-topic-props topic-configs)
+                           (construct-global-props global-configs))]
             {:props kvs
              :topics (into #{} (keys by-topic))
              :topic-configs topic-configs
+             :global-configs global-configs
              :attrs attrs
              :by-topic by-topic}))))))
 
@@ -391,15 +416,16 @@
     (min iterations (apply + (map :records-exactly (vals topic-configs))))
     iterations))
 
-(defn validate-history! [context topic-configs]
-  (doseq [[topic {:keys [max-history]}] topic-configs]
-    (when max-history
-      (is (<= (count (get-in context [:history topic])) max-history)))))
+(defn validate-history! [context global-configs topic-configs]
+  (doseq [[topic topic-config] topic-configs]
+    (let [n (or (:max-history topic-config) (:max-history global-configs))]
+      (when n
+        (is (<= (count (get-in context [:history topic])) n))))))
 
 (defspec property-test
   150
   (prop/for-all
-   [{:keys [props topics topic-configs attrs by-topic]} (generate-props)]
+   [{:keys [props topics topic-configs global-configs attrs by-topic]} (generate-props)]
    (if (not (empty? props))
      (let [context (atom (c/make-context props))
            records (atom [])
@@ -412,7 +438,7 @@
            (swap! records conj (:generated state))
 
            ;; History sizes never outgrow their max.
-           (validate-history! state topic-configs)))
+           (validate-history! state global-configs topic-configs)))
 
        (let [events (remove-drained @records)
              event-index (atom {})
@@ -450,7 +476,6 @@
      true)))
 
 ;; Future props:
-;; - history never exceeds global max
 ;; - nil-ish complex vals
 ;; - tombstones
 ;; - different global/topic/attr settings
