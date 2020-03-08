@@ -240,6 +240,10 @@ In Kafka, a key with a `null` value is called a tombstone. It conventionally rep
 
 Sometimes when you're generating complex values, you might want the value for a key to be null. By default Voluble doesn't do this, but you can turn configure it at the attribute level like so: `attrv.<topic>.<attribute>.null.rate` = `p`.
 
+### Bounded event streams
+
+There are some cases where it's realistic to produce exactly n records to a topic, no more and no less. This might be the case if you're loading a table of static reference data into Kafka. You can instruct Voluble to do this with the form `topic.<topic>.records.exactly` = `n`, where n is an integer > `0`.
+
 ### History capacity
 
 To perform `matching` expressions, Voluble needs to keep the history of previously generated records for each topic. By default, only the most recent `1,000,000` records are kept per topic. You can override this per topic with `topic.<topic>.history.records.max` = `n`, or globally with `global.history.records.max` = `n`.
@@ -266,6 +270,7 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 | `global.matching.rate` | `<double>` | `0.1` | Probability of matching when `sometimes` is used anywhere. Must be a value between `0` and `1`. |
 | `(attrkp\|attrvp).<topic>.matching.rate` | `<double>` | unset | Probability of matching when `sometimes` is used for `<topic>`. Must be a value between `0` and `1`. Overrides its global sibling. |
 | `(attrk\|attrv).<topic>.<attr>.matching.rate` | `<double>` | unset | Probability of matching when `sometimes` is used for `<topic>` with `<attr>`. Must be a value between `0` and `1`. Overrides its global sibling. |
+| `topic.<topic>.records.exactly` | `<long>` | unset | Generates exactly this many records for `<topic>`. `<topic>` will be retired from generating new records after this count is reached. |
 
 ## Limitations
 

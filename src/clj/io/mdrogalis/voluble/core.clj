@@ -44,6 +44,10 @@
    context
    (keys (:generators context))))
 
+(defn add-event-counters [context]
+  (let [counters (zipmap (keys (:generators context)) (repeat 0))]
+    (assoc context :records-produced counters)))
+
 (defn make-context [m]
   (when (empty? m)
     (throw (ex-info "No usable properties - refusing to start since there is no work to do." {})))
@@ -57,7 +61,9 @@
         (c/compile-generator-strategies)
         (add-topic-sequencing)
         (initialize-topic-timestamps)
-        (add-throttle-durations))))
+        (add-throttle-durations)
+        (add-event-counters)
+        (c/compile-retire-strategy))))
 
 (defn max-history-for-topic [context topic]
   (if-let [topic-max (get-in context [:topic-configs topic "history" "records" "max"])]
@@ -86,7 +92,8 @@
             val-gen-f (get-in context [:generators topic :value] default-generator)
             {:keys [key-results val-results]} (g/invoke-generator context deps key-gen-f val-gen-f)]
         (if (and (:success? key-results) (:success? val-results))
-          (let [event {:key (:result key-results) :value (:result val-results)}]
+          (let [event {:key (:result key-results) :value (:result val-results)}
+                retire-fn (get-in context [:generators topic :retire-fn])]
             (-> context
                 (assoc-in [:generated :status] :success)
                 (assoc-in [:generated :topic] topic)
@@ -94,7 +101,8 @@
                 (assoc-in [:generated :event :value] (:result val-results))
                 (assoc-in [:timestamps topic] now)
                 (update-in [:history topic] (fnil conj []) event)
-                (update :topic-seq rest)
+                (update-in [:records-produced topic] inc)
+                (retire-fn)
                 (purge-history topic)))
           (-> context
               (dissoc :generated)

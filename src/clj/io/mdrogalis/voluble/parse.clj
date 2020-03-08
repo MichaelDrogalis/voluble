@@ -133,6 +133,12 @@
         (= config ["throttle" "ms"])
         (Long/parseLong v)
 
+        (= config ["records" "exactly"])
+        (let [n (Long/parseLong v)]
+          (when (not (pos? n))
+            (throw (ex-info "records.exactly must be greater than 0" {:value v})))
+          n)
+
         :else v))
 
 (defn parse-attr-value [{:keys [config] :as parsed-k} v]

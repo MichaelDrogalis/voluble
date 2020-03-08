@@ -85,3 +85,27 @@
          (compile-gen-namespace topic namespaces :value)))
    context
    (:generators context)))
+
+(defn default-retire-fn [context]
+  (update context :topic-seq rest))
+
+(defn bounded-retire-fn [context topic n]
+  (let [n-topics (count (keys (:generators context)))]
+    (fn [rt-context]
+      (let [current (get-in rt-context [:records-produced topic])]
+        (if (>= current n)
+          (let [retired-topics (count (:retired-topics rt-context))
+                left (dec (- n-topics retired-topics))]
+            (-> rt-context
+                (update :topic-seq (fn [topics] (cycle (take left (rest topics)))))
+                (update :retired-topics (fnil conj []) topic)))
+          (default-retire-fn rt-context))))))
+
+(defn compile-retire-strategy [context]
+  (reduce
+   (fn [ctx topic]
+     (if-let [n (get-in context [:topic-configs topic "records" "exactly"])]
+       (assoc-in ctx [:generators topic :retire-fn] (bounded-retire-fn ctx topic n))
+       (assoc-in ctx [:generators topic :retire-fn] default-retire-fn)))
+   context
+   (keys (:generators context))))
