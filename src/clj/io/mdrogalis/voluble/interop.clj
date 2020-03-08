@@ -50,17 +50,25 @@
   (swap! state c/advance-until-success)
   (let [context @state
         generated (:generated context)
-        records (ArrayList.)
-        topic (get-in generated [:topic])
-        k (get-in generated [:event :key])
-        k-schema (build-schema k)
-        k-obj (build-converted-obj k k-schema)
-        v (get-in generated [:event :value])
-        v-schema (build-schema v)
-        v-obj (build-converted-obj v v-schema)
-        record (SourceRecord. (HashMap.) (HashMap.) topic nil k-schema k-obj v-schema v-obj)]
-    (.add records record)
-    records))
+        status (:status generated)]
+    (cond (= status :success)
+          (let [records (ArrayList.)
+                topic (get-in generated [:topic])
+                k (get-in generated [:event :key])
+                k-schema (build-schema k)
+                k-obj (build-converted-obj k k-schema)
+                v (get-in generated [:event :value])
+                v-schema (build-schema v)
+                v-obj (build-converted-obj v v-schema)
+                record (SourceRecord. (HashMap.) (HashMap.) topic nil k-schema k-obj v-schema v-obj)]
+            (.add records record)
+            records)
+
+          (= status :drained)
+          (ArrayList.)
+
+          :else
+          (throw (ex-info "State machine returned an unusable status." {:status status})))))
 
 (def expressions
   ["#{Name.male_first_name}"
