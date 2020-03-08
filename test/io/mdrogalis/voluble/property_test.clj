@@ -80,11 +80,9 @@
     (count topics))))
 
 (defn gen-global-configs []
-  (gen/fmap
-   (fn [n]
-     (when n
-       {:max-history n}))
-   (gen/frequency [[8 (gen/return nil)] [2 (gen/large-integer* {:min 1})]])))
+  (gen/hash-map
+   :max-history (gen/frequency [[8 (gen/return nil)] [2 (gen/large-integer* {:min 1})]])
+   :matching-rate (gen/double* {:min 0.00000001 :max 1 :NaN? false :infinite? false})))
 
 (defn choose-max-history [topics configs]
   (gen/fmap
@@ -306,10 +304,16 @@
   [k v]
   {"global.history.records.max" (str v)})
 
+(defmethod construct-global-config-kv :matching-rate
+  [k v]
+  {"global.matching.rate" (str v)})
+
 (defn construct-global-props [attrs]
   (reduce-kv
    (fn [all k v]
-     (merge all (construct-global-config-kv k v)))
+     (if v
+       (merge all (construct-global-config-kv k v))
+       all))
    {}
    attrs))
 
@@ -476,9 +480,9 @@
      true)))
 
 ;; Future props:
-;; - nil-ish complex vals
+;; - nil-ish vals
 ;; - tombstones
-;; - different global/topic/attr settings
+;; - attr matching rates
  
 
 #_(clojure.test/run-tests)
