@@ -25,4 +25,4 @@
    :uberjar
    {:aot :all
     :uberjar-name "voluble-uberjar-%s.jar"}}
-  :libdir-path "target/archive/lib")
+  :libdir-path "lib")
