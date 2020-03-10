@@ -100,7 +100,13 @@ When you run this connector, you'll get data looking roughly like the following:
 
 ## Installation
 
-I haven't published this to Maven or Confluent Hub yet, so just download the repo and build it locally. Install the uberjar on the classpath of Connect and you're good to go.
+Install the Connector with [`confluent-hub`](https://docs.confluent.io/current/connect/managing/confluent-hub/client.html):
+
+```
+confluent-hub install mdrogalis/voluble:0.1.0
+```
+
+Then drop the jars on the plugin path for Kafka Connect.
 
 ## Usage
 
