@@ -138,7 +138,7 @@ There are two types of generators: `with` and `matching`. `with` takes a Java Fa
 
 #### Qualifier
 
-Qualifiers let you control how generators work. Right now there is only one qualifier: `sometimes`. Sometimes you want to generate data that matches another topic, but not always. This is useful if you're modeling a single topic who's key's represent mutability. Or maybe you want to model a stream/stream join. `sometimes` allows you to control the probability that Voluble will generate a matching value versus a brand new one. You'd use it roughly like the following: `genv.users.team.sometimes.matching` = `team.key.name`, `genv.users.team.sometimes.with` = '#{Team.name}'. When you use `sometimes`, you need to specify both `matching` and `with`. By default there is now a `0.1` probability rate of matching, instead of `1`. You can control the probability to suit your circumstances (see the configuration section).
+Qualifiers let you control how generators work. Right now there is only one qualifier: `sometimes`. Sometimes you want to generate data that matches another topic, but not always. This is useful if you're modeling a single topic who's key's represent mutability. Or maybe you want to model a stream/stream join. `sometimes` allows you to control the probability that Voluble will generate a matching value versus a brand new one. You'd use it roughly like the following: `genv.users.team.sometimes.matching` = `team.key.name`, `genv.users.team.sometimes.with` = `'#{Team.name}'`. When you use `sometimes`, you need to specify both `matching` and `with`. By default there is now a `0.1` probability rate of matching, instead of `1`. You can control the probability to suit your circumstances (see the configuration section).
 
 #### Expressions
 
@@ -172,14 +172,6 @@ For concision, I just list out the relevant configuration.
 'genk.people.avatar.with' = '#{Internet.avatar}'
 'genv.people.name.with' = '#{Name.full_name}'
 'genv.people.bloodType.with' = '#{Name.blood_group}'
-```
-
-**A value with no key**
-
-Omitting any generator for a key simply makes it `null`.
-
-```
-'genv.people.name.with' = '#{Name.full_name}'
 ```
 
 **A topic that gets part of its value from another topic's primitive key**
