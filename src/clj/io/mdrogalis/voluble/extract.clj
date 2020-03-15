@@ -50,7 +50,7 @@
    (fn [all k v]
      (if (some #{(:kind k)} #{:attribute-primitive :attribute-complex})
        (let [parsed-val (p/parse-attr-value k v)]
-         (assoc-in all (into [(:topic k) (:ns k) (:attr k)] (:config k)) parsed-val))
+         (assoc-in all (concat [(:topic k) (:ns k)] (:attr k) (:config k)) parsed-val))
        all))
    {}
    kvs))
