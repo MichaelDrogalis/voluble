@@ -38,7 +38,7 @@
   (nullable context generator
             (if attr
               (fn [deps]
-                (get-in deps [topic (:ns generator) attr]))
+                (get-in deps (into [topic (:ns generator)] attr)))
               (fn [deps]
                 (get-in deps [topic (:ns generator)])))))
 
@@ -46,7 +46,7 @@
   [context {:keys [topic attr expression] :as generator}]
   (let [rate (choose-matching-rate context topic (:ns generator) attr)
         get-dep (if attr
-                  (fn [deps] (get-in deps [topic (:ns generator) attr]))
+                  (fn [deps] (get-in deps (into [topic (:ns generator)] attr)))
                   (fn [deps] (get-in deps [topic (:ns generator)])))]
     (nullable context generator
               (fn [deps]
