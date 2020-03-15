@@ -7,7 +7,8 @@
            [org.apache.kafka.connect.source SourceRecord]
            [org.apache.kafka.connect.data SchemaBuilder]
            [org.apache.kafka.connect.data Schema]
-           [org.apache.kafka.connect.data Struct]))
+           [org.apache.kafka.connect.data Struct]
+           [org.apache.kafka.connect.data Field]))
 
 (defn pom-version []
   (-> (doto (Properties.)
@@ -30,28 +31,27 @@
     java.lang.Boolean Schema/OPTIONAL_BOOLEAN_SCHEMA}
    (type t)))
 
-(defn complex-schema [x]
-  (let [builder (.optional (SchemaBuilder/struct))]
-    (.build
-     ^SchemaBuilder
-     (reduce-kv
-      (fn [^SchemaBuilder b k v]
-        (.field b k (primitive-schema v)))
-      builder
-      x))))
-
 (defn build-schema [x]
   (cond (map? x)
-        (complex-schema x)
+        (let [builder (.optional (SchemaBuilder/struct))]
+          (.build
+           ^SchemaBuilder
+           (reduce-kv
+            (fn [^SchemaBuilder b k v]
+              (.field b k (build-schema v)))
+            builder
+            x)))
 
         (not (nil? x))
         (primitive-schema x)))
 
-(defn build-converted-obj [x schema]
+(defn build-converted-obj [x ^Schema schema]
   (if (map? x)
     (let [s (Struct. schema)]
       (doseq [[^String k v] x]
-        (.put s k v))
+        (let [field ^Field (.field schema k)
+              inner-schema ^Schema (.schema field)]
+          (.put s k (build-converted-obj v inner-schema))))
       s)
     x))
 

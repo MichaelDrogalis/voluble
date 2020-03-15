@@ -11,6 +11,10 @@
    "attrvp" :value
    "attrv" :value})
 
+(defn split-nested-attrs [attr]
+  (when attr
+    (s/split attr #"->")))
+
 (defmulti parse-key
   (fn [kind k]
     kind))
@@ -40,7 +44,7 @@
        :original-key k
        :topic topic
        :ns ns*
-       :attr attr
+       :attr (split-nested-attrs attr)
        :qualified? (not (nil? qualified?))
        :generator generator})))
 
@@ -68,7 +72,7 @@
        :original-key k
        :topic topic
        :ns ns*
-       :attr attr
+       :attr (split-nested-attrs attr)
        :config (s/split unparsed-config #"\.")})))
 
 (defmethod parse-key :topic
@@ -109,7 +113,7 @@
                  {:strategy :dependent
                   :topic topic
                   :ns (keyword ns*)
-                  :attr attr})))
+                  :attr (split-nested-attrs attr)})))
 
 (defn parse-global-value [{:keys [config] :as parsed-k} v]
   (cond (= config ["history" "records" "max"])
