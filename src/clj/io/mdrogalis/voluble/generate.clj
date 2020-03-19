@@ -74,7 +74,7 @@
   [generator]
   (fn [deps dep-targets]
     (and (not (empty? deps))
-         (some (comp not nil?) (vals dep-targets)))))
+         (every? (comp not nil?) (vals dep-targets)))))
 
 (defmethod verify-deps-fn :either
   [generator]
