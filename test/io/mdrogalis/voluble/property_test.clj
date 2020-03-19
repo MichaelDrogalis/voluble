@@ -46,21 +46,25 @@
              (fn [ps k v]
                (if (and (map? v) (seq v))
                  (paths* ps (conj ks k) v)
-                 (if (seq v)
-                   (vec (conj ps (conj ks k v)))
-                   (vec (conj ps (conj ks k))))))
+                 (vec (conj ps (conj ks k v)))))
              ps
              m))]
     (paths* () [] m)))
 
 (def gen-attr-name (gen/such-that not-empty gen/string-alphanumeric))
 
+(defn remove-empty-leaves [attrs]
+  (mapv
+   (fn [xs]
+     (vec (remove (fn [x] (map? x)) xs)))
+   attrs))
+
 (def gen-attr-names
   (gen/fmap
    (fn [attrs]
      (if (string? attrs)
        [[attrs]]
-       (paths attrs)))
+       (remove-empty-leaves (paths attrs))))
    (gen/such-that
     not-empty
     (gen/recursive-gen (fn [g] (gen/map gen-attr-name g)) gen-attr-name))))
@@ -403,7 +407,7 @@
 
 (defn validate-attribute-dependency [event-index attr x]
   (when (:dep attr)
-    (let [ks (filter (comp not nil?) [(:dep attr) (:dep-ns attr) (:dep-attr attr)])
+    (let [ks (filter (comp not nil?) (into [(:dep attr) (:dep-ns attr)] (:dep-attr attr)))
           target (get-in event-index ks)]
       (when (and (not (and (nil? target) (nil? x)))
                  (not= (:qualifier attr) :sometimes))
@@ -423,11 +427,14 @@
   (let [t (:topic event)
         x (get-in event [:event ns*])]
     (if (coll? x)
-      (reduce-kv
-       (fn [i k v]
-         (update-in i [t ns* k] (fnil conj #{}) v))
-       index
-       x)
+      (let [ps (paths x)]
+        (reduce
+         (fn [i path]
+           (let [ks (butlast path)
+                 v (last path)]
+             (update-in i (into [t ns*] ks) (fnil conj #{}) v)))
+         index
+         ps))
       (update-in index [t ns*] (fnil conj #{}) x))))
 
 (defn remove-drained [events]
@@ -450,7 +457,7 @@
         (is (<= (count (get-in context [:history topic])) n))))))
 
 (defspec property-test
-  150
+  1000
   (prop/for-all
    [{:keys [props topics topic-configs global-configs attrs by-topic]} (generate-props)]
    (if (not (empty? props))
