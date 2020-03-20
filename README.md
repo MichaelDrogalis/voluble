@@ -7,7 +7,7 @@ When working with Apache Kafka, you often find yourself wanting to continuously 
 - Creating realistic data by integrating with [Java Faker](https://github.com/DiUS/java-faker)
 - Cross-topic relationships
 - Populating both keys and values of records
-- Making both primitive and complex values
+- Making both primitive and complex/nested values
 - Bounded or unbounded streams of data
 - Tombstoning
 
@@ -22,7 +22,7 @@ CREATE SOURCE CONNECTOR s WITH (
   'connector.class' = 'io.mdrogalis.voluble.VolubleSourceConnector',
 
   'genkp.owners.with' = '#{Internet.uuid}',
-  'genv.owners.name.with' = '#{Name.full_name}',
+  'genv.owners.name->full.with' = '#{Name.full_name}',
   'genv.owners.creditCardNumber.with' = '#{Finance.credit_card}',
 
   'genk.cats.name.with' = '#{FunnyName.name}',
@@ -55,7 +55,9 @@ When you run this connector, you'll get data looking roughly like the following:
         "event": {
             "key": "57da6bd0-dc33-4c2d-9a3f-046d2a008085",
             "value": {
-                "name": "Rene Bashirian",
+                "name": {
+                    "full": "Rene Bashirian"
+                },
                 "creditCardNumber": "3680-695522-0973"
             }
         }
@@ -146,6 +148,10 @@ When a `with` generator is used, the value is passed verbatim to Java Faker to c
 
 If you get stuck generating something that you want, just instantiate Faker directly in a Java program and call `faker.expression()` until you get the thing you're looking for.
 
+## Nesting
+
+You can nest data and access nested data in other events with arrow syntax (`->`). You can use this to generate data, as in `genv.owners.name->full.with` = `#{Name.full_name}`, which will create maps like `{"name": {"full": "Rene Bashirian"}}`. You can also reference nested values in a matching statement, as in `genv.cats.owner.matching` = `owners.value.name->full`.
+
 ## More examples
 
 For concision, I just list out the relevant configuration.
@@ -218,6 +224,13 @@ Useful for modeling stream/stream joins.
 'genkp.teamB.sometimes.matching' = 'teamA.key'
 ```
 
+**Creating nested data and accessing it from a match**
+
+```
+'genv.teamA.stadium->location.with' = '#{Address.state}'
+'genv.teamB.backupLocation.matching' = 'teamA.value.stadium->location'
+```
+
 ## Configuration
 
 Voluble has a few other knobs for controlling useful properties. Some properties can be defined at the attribute, topic, and global level. The most granular scope takes precedence (topic over global, etc).
@@ -273,7 +286,6 @@ To perform `matching` expressions, Voluble needs to keep the history of previous
 ## Limitations
 
 - There is no built-in support for multi-schema topics. If you want to do this, just create multiple instances of Voluble with different generator configurations.
-- There is not yet support for deeply nested complex keys or values. That is, it can only generate maps with a single layer of keys.
 - Voluble doesn't yet validate that you're not asking for something impossible, like a circular dependency. If it's internal state machine can't advance and generate a new event after `100` iterations, the connector will permanently abort.
 
 If Voluble doesn't do something you want it to, feel free to open and issue or submit a patch.

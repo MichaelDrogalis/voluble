@@ -1,3 +1,5 @@
 # Change Log
 
-No changes yet.
+## [Unreleased]
+
+- Added support for generating nested data structures with arrow syntax (`->`).

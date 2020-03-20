@@ -8,12 +8,12 @@
 (def default-tombstone-rate 0.0)
 
 (defn choose-matching-rate [{:keys [attr-configs global-configs]} topic ns* attr]
-  (let [topic-rate (get-in attr-configs [topic ns* attr "matching" "rate"])
+  (let [topic-rate (get-in attr-configs (concat [topic ns*] attr ["matching" "rate"]))
         global-rate (get-in global-configs ["matching" "rate"])]
     (or topic-rate global-rate default-matching-rate)))
 
 (defn choose-null-rate [{:keys [attr-configs]} topic ns* attr]
-  (get-in attr-configs [topic ns* attr "null" "rate"] default-null-rate))
+  (get-in attr-configs (concat [topic ns*] attr ["null" "rate"]) default-null-rate))
 
 (defn nullable [context {:keys [topic attr] :as generator} gen-f]
   (let [rate (choose-null-rate context topic (:ns generator) attr)]
@@ -38,7 +38,7 @@
   (nullable context generator
             (if attr
               (fn [deps]
-                (get-in deps [topic (:ns generator) attr]))
+                (get-in deps (into [topic (:ns generator)] attr)))
               (fn [deps]
                 (get-in deps [topic (:ns generator)])))))
 
@@ -46,7 +46,7 @@
   [context {:keys [topic attr expression] :as generator}]
   (let [rate (choose-matching-rate context topic (:ns generator) attr)
         get-dep (if attr
-                  (fn [deps] (get-in deps [topic (:ns generator) attr]))
+                  (fn [deps] (get-in deps (into [topic (:ns generator)] attr)))
                   (fn [deps] (get-in deps [topic (:ns generator)])))]
     (nullable context generator
               (fn [deps]
@@ -74,7 +74,7 @@
   [generator]
   (fn [deps dep-targets]
     (and (not (empty? deps))
-         (some (comp not nil?) (vals dep-targets)))))
+         (every? (comp not nil?) (vals dep-targets)))))
 
 (defmethod verify-deps-fn :either
   [generator]
