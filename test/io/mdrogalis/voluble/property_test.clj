@@ -409,8 +409,7 @@
   (when (:dep attr)
     (let [ks (filter (comp not nil?) (into [(:dep attr) (:dep-ns attr)] (:dep-attr attr)))
           target (get-in event-index ks)]
-      (when (and (not (and (nil? target) (nil? x)))
-                 (not= (:qualifier attr) :sometimes))
+      (when (not= (:qualifier attr) :sometimes)
         (is (contains? target x))))))
 
 (defn validate-dependencies [indexed-attrs event-index ns* event]
