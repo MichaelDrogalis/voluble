@@ -150,7 +150,7 @@ If you get stuck generating something that you want, just instantiate Faker dire
 
 ## Nesting
 
-You can nest data and access nested data in other events with arrow syntax (`->`). You can use this to generate data, as in `genv.owners.name->full.with` = `#{Name.full_name}`, which will create maps like `{"name": {"full": "Rene Bashirian"}}`. You can also reference nested values in a matching statement, as in `genv.cats.owner.matching` = `owners.value.name->full`.
+You can nest data and access nested data in other events with arrow syntax (`->`). You can use this to generate data, as in `genv.owners.name->full.with` = `#{Name.full_name}`, which will create maps like `{"name": {"full": "Rene Bashirian"}}`. You can also reference nested values in a matching statement, as in `genv.cats.owner.matching` = `owners.value.name->full`. Arrow syntax can be used anywhere that an attribute is allowed.
 
 ## More examples
 
