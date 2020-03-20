@@ -40,11 +40,34 @@
    "#{number.number_between '0','99'}.#{number.number_between '0','99'}"
    "#{bothify '????????','false'}"])
 
-(def gen-attr-name
-  (gen/such-that not-empty gen/string-alphanumeric))
+(defn paths [m]
+  (letfn [(paths* [ps ks m]
+            (reduce-kv
+             (fn [ps k v]
+               (if (and (map? v) (seq v))
+                 (paths* ps (conj ks k) v)
+                 (vec (conj ps (conj ks k v)))))
+             ps
+             m))]
+    (paths* () [] m)))
+
+(def gen-attr-name (gen/such-that not-empty gen/string-alphanumeric))
+
+(defn remove-empty-leaves [attrs]
+  (mapv
+   (fn [xs]
+     (vec (remove (fn [x] (map? x)) xs)))
+   attrs))
 
 (def gen-attr-names
-  (gen/vector-distinct gen-attr-name {:min-elements 1}))
+  (gen/fmap
+   (fn [attrs]
+     (if (string? attrs)
+       [[attrs]]
+       (remove-empty-leaves (paths attrs))))
+   (gen/such-that
+    not-empty
+    (gen/recursive-gen (fn [g] (gen/map gen-attr-name g)) gen-attr-name))))
 
 (defn gen-topic-dag []
   (gen/let
@@ -211,18 +234,22 @@
        qualifiers)))
    (gen/vector (gen/one-of [(gen/return true) (gen/return false)]) (count attrs))))
 
+(defn nest-attrs [xs]
+  (when (seq xs)
+    (s/join "->" xs)))
+
 (defn make-directive [attr]
   (cond (= (:key attr) :solo) "genkp"
         (= (:value attr) :solo) "genvp"
-        (string? (:key attr)) "genk"
-        (string? (:value attr)) "genv"
+        (vector? (:key attr)) "genk"
+        (vector? (:value attr)) "genv"
         :else (throw (ex-info "Couldn't make directive for attr." {:attr attr}))))
 
 (defn make-attr-name [attr]
   (let [k (:key attr)
         v (:value attr)]
     (when (not (or (= k :solo) (= v :solo)))
-      (or k v))))
+      (nest-attrs (or k v)))))
 
 (defn make-qualifier [attr]
   (when (= (:qualifier attr) :sometimes)
@@ -250,7 +277,7 @@
 (defn make-prop-val [attr]
   (if (:dep attr)
     (let [ns* (resolve-dep-ns (:dep-ns attr))
-          parts (filter (comp not nil?) [(:dep attr) ns* (:dep-attr attr)])]
+          parts (filter (comp not nil?) [(:dep attr) ns* (nest-attrs (:dep-attr attr))])]
       (s/join "." parts))
     (rand-nth expressions)))
 
@@ -380,10 +407,9 @@
 
 (defn validate-attribute-dependency [event-index attr x]
   (when (:dep attr)
-    (let [ks (filter (comp not nil?) [(:dep attr) (:dep-ns attr) (:dep-attr attr)])
+    (let [ks (filter (comp not nil?) (into [(:dep attr) (:dep-ns attr)] (:dep-attr attr)))
           target (get-in event-index ks)]
-      (when (and (not (and (nil? target) (nil? x)))
-                 (not= (:qualifier attr) :sometimes))
+      (when (not= (:qualifier attr) :sometimes)
         (is (contains? target x))))))
 
 (defn validate-dependencies [indexed-attrs event-index ns* event]
@@ -400,11 +426,14 @@
   (let [t (:topic event)
         x (get-in event [:event ns*])]
     (if (coll? x)
-      (reduce-kv
-       (fn [i k v]
-         (update-in i [t ns* k] (fnil conj #{}) v))
-       index
-       x)
+      (let [ps (paths x)]
+        (reduce
+         (fn [i path]
+           (let [ks (butlast path)
+                 v (last path)]
+             (update-in i (into [t ns*] ks) (fnil conj #{}) v)))
+         index
+         ps))
       (update-in index [t ns*] (fnil conj #{}) x))))
 
 (defn remove-drained [events]
@@ -427,7 +456,7 @@
         (is (<= (count (get-in context [:history topic])) n))))))
 
 (defspec property-test
-  150
+  1000
   (prop/for-all
    [{:keys [props topics topic-configs global-configs attrs by-topic]} (generate-props)]
    (if (not (empty? props))
@@ -447,7 +476,7 @@
        (let [events (remove-drained @records)
              event-index (atom {})
              indexed-attrs (build-attributes-index attrs)]
-         
+
          ;; It doesn't livelock.
          (is (= (count events)
                 (expected-records (keys by-topic) topic-configs iterations)))

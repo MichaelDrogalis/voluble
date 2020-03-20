@@ -34,7 +34,7 @@
      (fn [all attr {:keys [verify-deps-f value-gen-f]}]
        (if (verify-deps-f deps dep-targets)
          (let [generated (value-gen-f dep-targets)]
-           (assoc-in all [:result attr] generated))
+           (assoc-in all (into [:result] attr) generated))
          (reduced {:success? false})))
      {:success? true
       :result nil}
