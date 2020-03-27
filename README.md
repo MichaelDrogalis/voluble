@@ -43,7 +43,14 @@ CREATE SOURCE CONNECTOR s WITH (
 );
 ```
 
-This example generates data for 4 topics: `owners`, `cats`, `diets`, and `adopters`. The `owners` topic consists of records with primitive UUID keys and complex values (`name` and `creditCardNumber`). These values are generated through Java Faker expressions. The value of the events for `cats` has a field named `owner` which has to match one of the UUID generated in the `owner` topic. In the `diets` topic, you can see a similar property set for the key, except this one grabs a value from a complex key (`name` in the key of the `cats` topic). The `adopters` topic has keys that are sometimes new, but sometimes repeated (`sometimes.matching` is running against the same topic as its specified for). This is basically a nice easy to represent mutation. A tombstone record is generated for this topic `10%` of the time. Lastly, Voluble will keep at most `100000` records of history in memory per topic to perform all this matching against.
+This example generates data for 4 topics: `owners`, `cats`, `diets`, and `adopters`. 
+
+* The `owners` topic consists of records with primitive UUID keys and complex values (`name` and `creditCardNumber`). These values are generated through Java Faker expressions. 
+* The value of the events for `cats` has a field named `owner` which has to match one of the UUID generated in the `owner` topic. 
+* In the `diets` topic, you can see a similar property set for the key, except this one grabs a value from a complex key (`name` in the key of the `cats` topic). 
+* The `adopters` topic has keys that are sometimes new, but sometimes repeated (`sometimes.matching` is running against the same topic as its specified for). This is basically a nice easy to represent mutation. A tombstone record is generated for this topic `10%` of the time. 
+
+Lastly, Voluble will keep at most `100000` records of history in memory per topic to perform all this matching against.
 
 When you run this connector, you'll get data looking roughly like the following:
 
