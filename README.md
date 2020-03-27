@@ -115,8 +115,6 @@ Install the Connector with [`confluent-hub`](https://docs.confluent.io/current/c
 confluent-hub install mdrogalis/voluble:0.2.0
 ```
 
-Then drop the jars on the plugin path for Kafka Connect.
-
 ## Usage
 
 All configuration for Voluble is done through properties that are passed to the connector.
