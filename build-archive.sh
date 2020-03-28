@@ -22,6 +22,8 @@ mkdir -p $BUILD_LOCATION/lib
 JAR_LOCATION="target/voluble-$VERSION.jar"
 LIB_LOCATION="lib"
 
+if [ -d "$LIB_LOCATION" ]; then rm -rf $LIB_LOCATION; fi
+
 lein libdir
 cp $LIB_LOCATION/* $BUILD_LOCATION/lib/
 
