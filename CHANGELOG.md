@@ -1,6 +1,6 @@
 # Change Log
 
-## 0.2.1 (unreleased)
+## 0.2.1
 
 - Fixed Avro serialization when using nested data. [#5](https://github.com/MichaelDrogalis/voluble/issues/5)
 
