@@ -39,6 +39,7 @@ CREATE SOURCE CONNECTOR s WITH (
   'attrk.adopters.name.matching.rate' = '0.05',
   'topic.adopters.tombstone.rate' = '0.10',
 
+  'global.throttle.ms' = 500,
   'global.history.records.max' = '100000'
 );
 ```
@@ -50,7 +51,7 @@ This example generates data for 4 topics: `owners`, `cats`, `diets`, and `adopte
 * In the `diets` topic, you can see a similar property set for the key, except this one grabs a value from a complex key (`name` in the key of the `cats` topic). 
 * The `adopters` topic has keys that are sometimes new, but sometimes repeated (`sometimes.matching` is running against the same topic as its specified for). This is basically a nice easy to represent mutation. A tombstone record is generated for this topic `10%` of the time. 
 
-Lastly, Voluble will keep at most `100000` records of history in memory per topic to perform all this matching against.
+Lastly, Voluble will generate a new record every ~500 ms and keep at most `100000` records of history in memory per topic to perform all this matching against.
 
 When you run this connector, you'll get data looking roughly like the following:
 
