@@ -39,7 +39,7 @@ CREATE SOURCE CONNECTOR s WITH (
   'attrk.adopters.name.matching.rate' = '0.05',
   'topic.adopters.tombstone.rate' = '0.10',
 
-  'global.throttle.ms' = 500,
+  'global.throttle.ms' = '500',
   'global.history.records.max' = '100000'
 );
 ```
