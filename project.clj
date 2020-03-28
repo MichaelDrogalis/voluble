@@ -1,4 +1,4 @@
-(defproject io.mdrogalis/voluble "0.2.0"
+(defproject io.mdrogalis/voluble "0.2.1-SNAPSHOT"
   :description "Intelligent data generator for Apache Kafka. Generates streams of realistic data with support for cross-topic relationships, tombstoning, configurable rates, and more."
   :url "http://github.com/MichaelDrogalis/voluble"
   :license {:name "Eclipse Public License"
