@@ -113,7 +113,7 @@ When you run this connector, you'll get data looking roughly like the following:
 Install the Connector with [`confluent-hub`](https://docs.confluent.io/current/connect/managing/confluent-hub/client.html):
 
 ```
-confluent-hub install mdrogalis/voluble:0.2.0
+confluent-hub install mdrogalis/voluble:0.2.1
 ```
 
 ## Usage
