@@ -151,6 +151,16 @@ Qualifiers let you control how generators work. Right now there is only one qual
 
 When a `with` generator is used, the value is passed verbatim to Java Faker to create a value. Java Faker has a huge number of categories that it can generate data for. Just check out the project to get a sense for what you can do. Under the covers, the [`expression` method](https://github.com/DiUS/java-faker/blob/7ac7e53aa2e9a3d39c1e663ddf62b1feb625b060/src/main/java/com/github/javafaker/Faker.java#L636-L654) of Faker is being invoked to dynamically create data without going through its Java classes.
 
+Some Faker categories take parameters as arguments. The parser for arguments is rather strict: all values surrounded with apostrophes, and no spaces in between each value. Some arguments (like TimeUnit) appear to be case-sensitive. Here are some examples:
+
+```
+#{number.number_between '-9','9'}
+#{date.birthday}
+#{date.birthday '10','20'}
+#{date.past '10','DAYS'}
+#{date.between 'Sun Mar 22 01:59:02 PDT 2020','Sun Mar 24 01:59:02 PDT 2020'}
+```
+
 If you get stuck generating something that you want, just instantiate Faker directly in a Java program and call `faker.expression()` until you get the thing you're looking for.
 
 ## Nesting
