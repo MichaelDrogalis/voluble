@@ -2,7 +2,7 @@
 
 ## 0.2.1 (unreleased)
 
-- Fixed Avro serialization when using nested data. [#8](https://github.com/MichaelDrogalis/voluble/pull/8)
+- Fixed Avro serialization when using nested data. [#5](https://github.com/MichaelDrogalis/voluble/issues/5)
 
 ## 0.2.0
 
