@@ -31,14 +31,16 @@
     java.lang.Boolean Schema/OPTIONAL_BOOLEAN_SCHEMA}
    (type t)))
 
-(defn build-schema [x]
+(defn build-schema [x depth]
+  ;; `depth` evades nested namespace collisions when
+  ;; Connect's format converts to Avro.
   (cond (map? x)
-        (let [builder (.optional (SchemaBuilder/struct))]
+        (let [builder (.optional (.name (SchemaBuilder/struct) (str "io.mdrogalis.Gen" depth)))]
           (.build
            ^SchemaBuilder
            (reduce-kv
             (fn [^SchemaBuilder b k v]
-              (.field b k (build-schema v)))
+              (.field b k (build-schema v (inc depth))))
             builder
             x)))
 
@@ -64,10 +66,10 @@
           (let [records (ArrayList.)
                 topic (get-in generated [:topic])
                 k (get-in generated [:event :key])
-                k-schema (build-schema k)
+                k-schema (build-schema k 0)
                 k-obj (build-converted-obj k k-schema)
                 v (get-in generated [:event :value])
-                v-schema (build-schema v)
+                v-schema (build-schema v 0)
                 v-obj (build-converted-obj v v-schema)
                 record (SourceRecord. (HashMap.) (HashMap.) topic nil k-schema k-obj v-schema v-obj)]
             (.add records record)

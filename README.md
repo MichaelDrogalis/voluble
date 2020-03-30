@@ -39,6 +39,7 @@ CREATE SOURCE CONNECTOR s WITH (
   'attrk.adopters.name.matching.rate' = '0.05',
   'topic.adopters.tombstone.rate' = '0.10',
 
+  'global.throttle.ms' = '500',
   'global.history.records.max' = '100000'
 );
 ```
@@ -50,7 +51,7 @@ This example generates data for 4 topics: `owners`, `cats`, `diets`, and `adopte
 * In the `diets` topic, you can see a similar property set for the key, except this one grabs a value from a complex key (`name` in the key of the `cats` topic). 
 * The `adopters` topic has keys that are sometimes new, but sometimes repeated (`sometimes.matching` is running against the same topic as its specified for). This is basically a nice easy to represent mutation. A tombstone record is generated for this topic `10%` of the time. 
 
-Lastly, Voluble will keep at most `100000` records of history in memory per topic to perform all this matching against.
+Lastly, Voluble will only generate a new record per topic every ~`500` ms and keep at most `100000` records of history in memory per topic to perform all this matching against.
 
 When you run this connector, you'll get data looking roughly like the following:
 
@@ -112,7 +113,7 @@ When you run this connector, you'll get data looking roughly like the following:
 Install the Connector with [`confluent-hub`](https://docs.confluent.io/current/connect/managing/confluent-hub/client.html):
 
 ```
-confluent-hub install mdrogalis/voluble:0.2.0
+confluent-hub install mdrogalis/voluble:0.2.1
 ```
 
 ## Usage
@@ -150,6 +151,16 @@ Qualifiers let you control how generators work. Right now there is only one qual
 #### Expressions
 
 When a `with` generator is used, the value is passed verbatim to Java Faker to create a value. Java Faker has a huge number of categories that it can generate data for. Just check out the project to get a sense for what you can do. Under the covers, the [`expression` method](https://github.com/DiUS/java-faker/blob/7ac7e53aa2e9a3d39c1e663ddf62b1feb625b060/src/main/java/com/github/javafaker/Faker.java#L636-L654) of Faker is being invoked to dynamically create data without going through its Java classes.
+
+Some Faker categories take parameters as arguments. The parser for arguments is rather strict: all values surrounded with apostrophes, and no spaces in between each value. Some arguments (like TimeUnit) appear to be case-sensitive. Here are some examples:
+
+```
+#{number.number_between '-9','9'}
+#{date.birthday}
+#{date.birthday '10','20'}
+#{date.past '10','DAYS'}
+#{date.between 'Sun Mar 22 01:59:02 PDT 2020','Sun Mar 24 01:59:02 PDT 2020'}
+```
 
 If you get stuck generating something that you want, just instantiate Faker directly in a Java program and call `faker.expression()` until you get the thing you're looking for.
 
