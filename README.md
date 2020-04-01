@@ -4,7 +4,8 @@
 
 When working with Apache Kafka, you often find yourself wanting to continuously populate your topics with something that approximates the shape of your production data. Voluble solves that problem. The primary things it supports are:
 
-- Creating realistic data by integrating with [Java Faker](https://github.com/DiUS/java-faker)
+- Creating realistic data by integrating with [Java Faker](https://github.com/DiUS/java-faker). 
+  - To get an idea of the entities that JavaFaker can create, see [this example site](https://java-faker.herokuapp.com/).
 - Cross-topic relationships
 - Populating both keys and values of records
 - Making both primitive and complex/nested values
@@ -128,7 +129,7 @@ Generating events with Voluble basically take the form of:
 '<directive>.<topic>.[attribute?].[qualifier?].<generator>' = 'expression'
 ```
 
-Let's break down what exactly that means.
+Let's break down what exactly that means. 
 
 #### Directives
 
