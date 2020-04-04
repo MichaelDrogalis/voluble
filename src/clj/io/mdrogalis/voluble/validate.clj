@@ -40,10 +40,19 @@
             (let [msg (format "Complex attribute configuration is supplied for topic %s, but its generated %s is a primitive type. Stopping because these configurations are incompatible. Either change its %s to a complex type or change this configuration to a primitive type. Problematic configuration is: %s" topic ns* ns* (:original-key attr))]
               (throw (IllegalArgumentException. msg)))))))))
 
+(defn validate-unused-attrs! [context]
+  (doseq [[topic attrs] (get-in context [:configs-by-topic :attr])]
+    (doseq [attr attrs]
+      (when (= (:kind attr) :attribute-complex)
+        (when-not (get-in context [:generators topic (:ns attr) :attrs (:attr attr)])
+          (let [msg (format "Complex attribute configuration is supplied for topic %s, but there is no generator that creates this attribute. Stopping because this configuration does nothing. Either add a generator for this attribute or remove this configuration. Problematic configuration is: %s" topic (:original-key attr))]
+            (throw (IllegalArgumentException. msg))))))))
+
 (defn validate-configuration! [context]
   (let [topics (set (keys (:generators context)))]
     (validate-topic-configs! context topics)
     (validate-attr-configs! context topics)
     (validate-attr-shape! context)
+    (validate-unused-attrs! context)
 
     (dissoc context :configs-by-topic)))

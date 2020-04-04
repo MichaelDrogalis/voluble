@@ -53,7 +53,7 @@
    (fn [ctx k v]
      (if (some #{(:kind k)} #{:attribute-primitive :attribute-complex})
        (let [parsed-val (p/parse-attr-value k v)
-             retained-config (select-keys k [:original-key :kind :ns])]
+             retained-config (select-keys k [:original-key :kind :ns :attr])]
          (-> ctx
              (assoc-in (concat [:attr-configs (:topic k) (:ns k)] (:attr k) (:config k)) parsed-val)
              (update-in [:configs-by-topic :attr (:topic k)] (fnil conj []) retained-config)))
