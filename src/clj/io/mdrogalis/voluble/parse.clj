@@ -126,7 +126,7 @@
         (Long/parseLong v)
 
         :else
-        (let [msg (format "Unrecognized global form: %s" (:original-key parsed-k))]
+        (let [msg (format "Unrecognized global configuration: %s" (:original-key parsed-k))]
           (throw (IllegalArgumentException. msg)))))
 
 (defn parse-topic-value [{:keys [config] :as parsed-k} v]
@@ -146,7 +146,7 @@
           n)
 
         :else
-        (let [msg (format "Unrecognized topic form: %s" (:original-key parsed-k))]
+        (let [msg (format "Unrecognized topic configuration: %s" (:original-key parsed-k))]
           (throw (IllegalArgumentException. msg)))))
 
 (defn parse-attr-value [{:keys [config] :as parsed-k} v]
@@ -157,7 +157,7 @@
         (Double/parseDouble v)
 
         :else
-        (let [msg (format "Unrecognized attribute form: %s" (:original-key parsed-k))]
+        (let [msg (format "Unrecognized attribute configuration: %s" (:original-key parsed-k))]
           (throw (IllegalArgumentException. msg)))))
 
 (defn augment-parsed-val [parsed-k parsed-v]

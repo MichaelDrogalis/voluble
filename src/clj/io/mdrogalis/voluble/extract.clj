@@ -35,22 +35,26 @@
    {}
    kvs))
 
-(defn extract-topic-configs [kvs]
+(defn extract-topic-configs [context kvs]
   (reduce-kv
-   (fn [all k v]
+   (fn [ctx k v]
      (if (= (:kind k) :topic)
        (let [parsed-val (p/parse-topic-value k v)]
-         (assoc-in all (into [(:topic k)] (:config k)) parsed-val))
-       all))
-   {}
+         (-> ctx
+             (assoc-in (into [:topic-configs (:topic k)] (:config k)) parsed-val)
+             (assoc-in [:raw-configs :topic (:topic k)] (:original-key k))))
+       ctx))
+   context
    kvs))
 
-(defn extract-attr-configs [kvs]
+(defn extract-attr-configs [context kvs]
   (reduce-kv
-   (fn [all k v]
+   (fn [ctx k v]
      (if (some #{(:kind k)} #{:attribute-primitive :attribute-complex})
        (let [parsed-val (p/parse-attr-value k v)]
-         (assoc-in all (concat [(:topic k) (:ns k)] (:attr k) (:config k)) parsed-val))
-       all))
-   {}
+         (-> ctx
+             (assoc-in (concat [:attr-configs (:topic k) (:ns k)] (:attr k) (:config k)) parsed-val)
+             (assoc-in [:raw-configs :attr (:topic k)] (:original-key k))))
+       ctx))
+   context
    kvs))

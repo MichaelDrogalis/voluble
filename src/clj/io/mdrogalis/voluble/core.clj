@@ -1,6 +1,7 @@
 (ns io.mdrogalis.voluble.core
   (:require [io.mdrogalis.voluble.parse :as p]
             [io.mdrogalis.voluble.extract :as e]
+            [io.mdrogalis.voluble.validate :as v]
             [io.mdrogalis.voluble.compile :as c]
             [io.mdrogalis.voluble.generate :as g])
   (:import [java.util Properties]
@@ -18,13 +19,17 @@
   (merge context {:global-configs (e/extract-global-configs kvs)}))
 
 (defn add-topic-configs [context kvs]
-  (merge context {:topic-configs (e/extract-topic-configs kvs)}))
+  (e/extract-topic-configs context kvs))
 
 (defn add-attr-configs [context kvs]
-  (merge context {:attr-configs (e/extract-attr-configs kvs)}))
+  (e/extract-attr-configs context kvs))
 
 (defn add-generators [context kvs]
   (merge context {:generators (e/extract-generators kvs)}))
+
+(defn validate-configuration! [context]
+  (v/validate-configuration! context)
+  context)
 
 (defn add-topic-sequencing [context]
   (merge context {:topic-seq (cycle (keys (:generators context)))}))
@@ -58,6 +63,7 @@
         (add-topic-configs kvs)
         (add-attr-configs kvs)
         (add-generators kvs)
+        (validate-configuration!)
         (c/compile-generator-strategies)
         (add-topic-sequencing)
         (initialize-topic-timestamps)
