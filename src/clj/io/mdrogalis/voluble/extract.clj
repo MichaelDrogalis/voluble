@@ -39,10 +39,11 @@
   (reduce-kv
    (fn [ctx k v]
      (if (= (:kind k) :topic)
-       (let [parsed-val (p/parse-topic-value k v)]
+       (let [parsed-val (p/parse-topic-value k v)
+             retained-config (select-keys k [:original-key])]
          (-> ctx
              (assoc-in (into [:topic-configs (:topic k)] (:config k)) parsed-val)
-             (assoc-in [:raw-configs :topic (:topic k)] (:original-key k))))
+             (update-in [:configs-by-topic :topic (:topic k)] (fnil conj []) retained-config)))
        ctx))
    context
    kvs))
@@ -51,10 +52,11 @@
   (reduce-kv
    (fn [ctx k v]
      (if (some #{(:kind k)} #{:attribute-primitive :attribute-complex})
-       (let [parsed-val (p/parse-attr-value k v)]
+       (let [parsed-val (p/parse-attr-value k v)
+             retained-config (select-keys k [:original-key :kind :ns])]
          (-> ctx
              (assoc-in (concat [:attr-configs (:topic k) (:ns k)] (:attr k) (:config k)) parsed-val)
-             (assoc-in [:raw-configs :attr (:topic k)] (:original-key k))))
+             (update-in [:configs-by-topic :attr (:topic k)] (fnil conj []) retained-config)))
        ctx))
    context
    kvs))

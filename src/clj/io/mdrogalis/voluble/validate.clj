@@ -6,7 +6,7 @@
   (join ", " topics))
 
 (defn format-configs [context k topics]
-  (let [ks (map (fn [t] (get-in context [:raw-configs k t])) topics)]
+  (let [ks (mapcat (fn [t] (map :original-key (get-in context [:configs-by-topic k t]))) topics)]
     (join ", " ks)))
 
 (defn validate-topic-configs! [context topics]
@@ -27,9 +27,23 @@
             msg (format "Attribute configuration is supplied for topic(s) %s, but no generators are specified for them. Stopping because these attribute configurations don't do anything. Either add generators for these topics or remove these attribute configurations. Problematic configurations are: %s" formatted-topics formatted-configs)]
         (throw (IllegalArgumentException. msg))))))
 
+(defn validate-attr-shape! [context]
+  (doseq [[topic attrs] (get-in context [:configs-by-topic :attr])]
+    (doseq [attr attrs]
+      (let [gen (get-in context [:generators topic (:ns attr)])
+            ns* (name (:ns attr))]
+        (if (:solo gen)
+          (when (not= (:kind attr) :attribute-primitive)
+            (let [msg (format "Primitive attribute configuration is supplied for topic %s, but its generated %s is a complex type. Stopping because these configurations are incompatible. Either change its %s to a primitive type or change this configuration to a complex type. Problematic configuration is: %s" topic ns* ns* (:original-key attr))]
+              (throw (IllegalArgumentException. msg))))
+          (when (not= (:kind attr) :attribute-complex)
+            (let [msg (format "Complex attribute configuration is supplied for topic %s, but its generated %s is a primitive type. Stopping because these configurations are incompatible. Either change its %s to a complex type or change this configuration to a primitive type. Problematic configuration is: %s" topic ns* ns* (:original-key attr))]
+              (throw (IllegalArgumentException. msg)))))))))
+
 (defn validate-configuration! [context]
   (let [topics (set (keys (:generators context)))]
     (validate-topic-configs! context topics)
     (validate-attr-configs! context topics)
-    
-    (dissoc context :raw-configs)))
+    (validate-attr-shape! context)
+
+    (dissoc context :configs-by-topic)))
