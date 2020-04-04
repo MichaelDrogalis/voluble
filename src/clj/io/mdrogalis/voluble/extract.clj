@@ -4,25 +4,27 @@
 (defn update-dependencies [topics topic parsed-v]
   (if (= (:strategy parsed-v) :dependent)
     (let [dep (:topic parsed-v)]
-      (update-in topics [topic :dependencies] (fnil conj #{}) dep))
+      (update-in topics [:generators topic :dependencies] (fnil conj #{}) dep))
     topics))
 
 (defn store-generator [topics {:keys [topic attr] :as parsed-k} parsed-v]
   (if attr
-    (update-in topics [topic (:ns parsed-k) :attrs attr] (fnil conj []) parsed-v)
-    (update-in topics [topic (:ns parsed-k) :solo] (fnil conj []) parsed-v)))
+    (update-in topics [:generators topic (:ns parsed-k) :attrs attr] (fnil conj []) parsed-v)
+    (update-in topics [:generators topic (:ns parsed-k) :solo] (fnil conj []) parsed-v)))
 
-(defn extract-generators [kvs]
+(defn extract-generators [context kvs]
   (reduce-kv
-   (fn [all {:keys [topic] :as k} v]
+   (fn [ctx {:keys [topic] :as k} v]
      (if (:generator k)
        (let [parsed-val (p/parse-generator-value k v)
-             augmented-val (p/augment-parsed-val k parsed-val)]
-         (-> all
+             augmented-val (p/augment-parsed-val k parsed-val)
+             retained-config (select-keys k [:original-key])]
+         (-> ctx
              (store-generator k augmented-val)
-             (update-dependencies topic augmented-val)))
-       all))
-   {}
+             (update-dependencies topic augmented-val)
+             (update-in [:configs-by-topic :gen topic (:ns k)] (fnil conj []) retained-config)))
+       ctx))
+   context
    kvs))
 
 (defn extract-global-configs [kvs]

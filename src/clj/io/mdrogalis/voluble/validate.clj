@@ -9,6 +9,10 @@
   (let [ks (mapcat (fn [t] (map :original-key (get-in context [:configs-by-topic k t]))) topics)]
     (join ", " ks)))
 
+(defn format-gen-configs [context topic ns*]
+  (let [ks (map :original-key (get-in context [:configs-by-topic :gen topic ns*]))]
+    (join ", " ks)))
+
 (defn validate-topic-configs! [context topics]
   (let [configured-topics (set (keys (:topic-configs context)))
         unknown-topics (s/difference configured-topics topics)]
@@ -48,11 +52,25 @@
           (let [msg (format "Complex attribute configuration is supplied for topic %s, but there is no generator that creates this attribute. Stopping because this configuration does nothing. Either add a generator for this attribute or remove this configuration. Problematic configuration is: %s" topic (:original-key attr))]
             (throw (IllegalArgumentException. msg))))))))
 
+(defn validate-shape-ns-conflicts! [context topic ns*]
+  (when (and (get-in context [:generators topic ns* :solo])
+             (get-in context [:generators topic ns* :attrs]))
+    (let [ns-str (name ns*)
+          formatted-configs (format-gen-configs context topic ns*)
+          msg (format "Both primitive and complex generator %s configurations were supplied for topic %s. Stopping because these configurations are incompatible. Either use a single %s primitive generator configuration or use one or more complex configurations. Problematic configurations are: %s" ns-str topic ns-str formatted-configs)]
+      (throw (IllegalArgumentException. msg)))))
+
+(defn validate-shape-conflicts! [context topics]
+  (doseq [topic topics]
+    (validate-shape-ns-conflicts! context topic :key)
+    (validate-shape-ns-conflicts! context topic :value)))
+
 (defn validate-configuration! [context]
   (let [topics (set (keys (:generators context)))]
     (validate-topic-configs! context topics)
     (validate-attr-configs! context topics)
     (validate-attr-shape! context)
     (validate-unused-attrs! context)
+    (validate-shape-conflicts! context topics)
 
     (dissoc context :configs-by-topic)))

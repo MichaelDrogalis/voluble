@@ -25,7 +25,7 @@
   (e/extract-attr-configs context kvs))
 
 (defn add-generators [context kvs]
-  (merge context {:generators (e/extract-generators kvs)}))
+  (e/extract-generators context kvs))
 
 (defn validate-configuration! [context]
   (v/validate-configuration! context)
