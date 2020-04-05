@@ -13,6 +13,9 @@
   (let [ks (map :original-key (get-in context [:configs-by-topic :gen topic ns*]))]
     (join ", " ks)))
 
+(defn format-attr [attr]
+  (join "->" attr))
+
 (defn validate-topic-configs! [context topics]
   (let [configured-topics (set (keys (:topic-configs context)))
         unknown-topics (s/difference configured-topics topics)]
@@ -65,6 +68,35 @@
     (validate-shape-ns-conflicts! context topic :key)
     (validate-shape-ns-conflicts! context topic :value)))
 
+(defn validate-dependency-generator! [context topics topic gen]
+  (when (= (:strategy gen) :dependent)
+    (let [dep-topic (:topic gen)]
+      (when-not (contains? topics dep-topic)
+        (let [msg (format "Found a generator for topic %s that is dependent on topic %s, but no generator is defined for %s. Stopping because no data can ever be produced for topic %s. Either define a generator for topic %s or remove this generator. Problematic configuration is: %s" topic dep-topic dep-topic topic dep-topic (:original-key gen))]
+          (throw (IllegalArgumentException. msg))))
+
+      (when-let [attr (:attr gen)]
+        (when-not (get-in context [:generators dep-topic (:ns gen) :attrs attr])
+          (let [ns-str (name (:ns gen))
+                formatted-attr (format-attr (:attr gen))
+                msg (format "Found a generator for topic %s that is dependent on attribute %s in topic %s's %s, but no generator is defined for that attribute. Stopping because this generator would always return null. Either define a generator for the attribute or remove this generator. Problematic configuration is: %s" topic formatted-attr dep-topic ns-str (:original-key gen))]
+            (throw (IllegalArgumentException. msg))))))))
+
+(defn validate-ns-dependencies! [context topics topic ns*]
+  (let [generator (get-in context [:generators topic ns*])]
+    (if (:solo generator)
+      (doseq [gen (:solo generator)]
+        (validate-dependency-generator! context topics topic gen))
+      (doseq [[attr generators] (:attrs generator)]
+        (doseq [gen generators]
+          (validate-dependency-generator! context topics topic gen))))))
+
+(defn validate-dependencies! [context topics]
+  (doseq [topic topics]
+    (when (not (empty? (get-in context [:generators topic :dependencies])))
+      (validate-ns-dependencies! context topics topic :key)
+      (validate-ns-dependencies! context topics topic :value))))
+
 (defn validate-configuration! [context]
   (let [topics (set (keys (:generators context)))]
     (validate-topic-configs! context topics)
@@ -72,5 +104,6 @@
     (validate-attr-shape! context)
     (validate-unused-attrs! context)
     (validate-shape-conflicts! context topics)
+    (validate-dependencies! context topics)
 
     (dissoc context :configs-by-topic)))
