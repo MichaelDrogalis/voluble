@@ -27,8 +27,8 @@
     (expect-exception! props))
 
   (let [props {"genk.t1.beer.with" "#{Beer.name}"
-               "attrk.t1.beer.something" "10"
-               "genv.t1.card_type.with" "#{Business.creditCardType}"}]
+               "genv.t1.card_type.with" "#{Business.creditCardType}"
+               "attrk.t1.beer.something" "10"}]
     (expect-exception! props))
 
   (let [props {"genk.t1.beer.with" "#{Beer.name}"

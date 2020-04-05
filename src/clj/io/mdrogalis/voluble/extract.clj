@@ -18,7 +18,9 @@
      (if (:generator k)
        (let [parsed-val (p/parse-generator-value k v)
              augmented-val (p/augment-parsed-val k parsed-val)
-             retained-config (select-keys k [:original-key])]
+             retained-config (-> k
+                                 (select-keys [:original-key])
+                                 (assoc :original-value v))]
          (-> ctx
              (store-generator k augmented-val)
              (update-dependencies topic augmented-val)
@@ -42,7 +44,9 @@
    (fn [ctx k v]
      (if (= (:kind k) :topic)
        (let [parsed-val (p/parse-topic-value k v)
-             retained-config (select-keys k [:original-key])]
+             retained-config (-> k
+                                 (select-keys [:original-key])
+                                 (assoc :original-value v))]
          (-> ctx
              (assoc-in (into [:topic-configs (:topic k)] (:config k)) parsed-val)
              (update-in [:configs-by-topic :topic (:topic k)] (fnil conj []) retained-config)))
@@ -55,7 +59,9 @@
    (fn [ctx k v]
      (if (some #{(:kind k)} #{:attribute-primitive :attribute-complex})
        (let [parsed-val (p/parse-attr-value k v)
-             retained-config (select-keys k [:original-key :kind :ns :attr])]
+             retained-config (-> k
+                                 (select-keys [:original-key :kind :ns :attr])
+                                 (assoc :original-value v))]
          (-> ctx
              (assoc-in (concat [:attr-configs (:topic k) (:ns k)] (:attr k) (:config k)) parsed-val)
              (update-in [:configs-by-topic :attr (:topic k)] (fnil conj []) retained-config)))
