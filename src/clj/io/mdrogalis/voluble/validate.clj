@@ -92,15 +92,14 @@
     (validate-shape-ns-conflicts! context topic :key)
     (validate-shape-ns-conflicts! context topic :value)))
 
-(defn validate-dependency-generator! [context topics topic ns* gen]
+(defn validate-dependency-generator! [context topics topic gen]
   (when (= (:strategy gen) :dependent)
     (let [dep-topic (:topic gen)
-          ns-str (name (:ns gen))
-          ks (original-gen-configs context topic ns*)]
+          ns-str (name (:ns gen))]
       (when-not (contains? topics dep-topic)
         (let [msg (pretty-error-msg
                    (format "Found a generator for topic %s that is dependent on topic %s, but no generator is defined for %s. Stopping because no data can ever be produced for topic %s. Either define a generator for topic %s or remove this generator." topic dep-topic dep-topic topic dep-topic)
-                   ks)]
+                   [[(:original-key gen) (:original-value gen)]])]
           (throw (IllegalArgumentException. msg))))
 
       (if-let [attr (:attr gen)]
@@ -108,22 +107,22 @@
           (let [formatted-attr (format-attr (:attr gen))
                 msg (pretty-error-msg
                      (format "Found a generator for topic %s that is dependent on attribute %s in topic %s's %s, but no generator is defined for that attribute. Stopping because this generator would always return null. Either define a generator for the attribute or remove this generator." topic formatted-attr dep-topic ns-str)
-                     ks)]
+                     [[(:original-key gen) (:original-value gen)]])]
             (throw (IllegalArgumentException. msg))))
         (when-not (get-in context [:generators dep-topic (:ns gen) :solo])
           (let [msg (pretty-error-msg
                      (format "Found a generator for topic %s that is dependent on topic %s's %s, but there's no primitive generator defined for the %s. Stopping because this generator is incompatible. Either define a generator for the %s or remove this dependency." topic dep-topic ns-str ns-str ns-str)
-                     ks)]
+                     [[(:original-key gen) (:original-value gen)]])]
             (throw (IllegalArgumentException. msg))))))))
 
 (defn validate-ns-dependencies! [context topics topic ns*]
   (let [generator (get-in context [:generators topic ns*])]
     (if (:solo generator)
       (doseq [gen (:solo generator)]
-        (validate-dependency-generator! context topics topic ns* gen))
+        (validate-dependency-generator! context topics topic gen))
       (doseq [[attr generators] (:attrs generator)]
         (doseq [gen generators]
-          (validate-dependency-generator! context topics topic ns* gen))))))
+          (validate-dependency-generator! context topics topic gen))))))
 
 (defn validate-dependencies! [context topics]
   (doseq [topic topics]

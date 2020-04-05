@@ -17,7 +17,7 @@
    (fn [ctx {:keys [topic] :as k} v]
      (if (:generator k)
        (let [parsed-val (p/parse-generator-value k v)
-             augmented-val (p/augment-parsed-val k parsed-val)
+             augmented-val (p/augment-parsed-val k parsed-val v)
              retained-config (-> k
                                  (select-keys [:original-key])
                                  (assoc :original-value v))]

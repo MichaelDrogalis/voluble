@@ -160,9 +160,9 @@
         (let [msg (format "Unrecognized attribute configuration: %s" (:original-key parsed-k))]
           (throw (IllegalArgumentException. msg)))))
 
-(defn augment-parsed-val [parsed-k parsed-v]
+(defn augment-parsed-val [parsed-k parsed-v unparsed-v]
   (let [sub-keys (select-keys parsed-k [:topic :ns :attr :original-key :qualified?])]
-    (merge sub-keys parsed-v)))
+    (assoc (merge sub-keys parsed-v) :original-value unparsed-v)))
 
 (defn parse-keys [props]
   (reduce-kv
