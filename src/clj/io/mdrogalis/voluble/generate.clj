@@ -29,9 +29,14 @@
 
 (defmethod gen-value-fn :isolated
   [{:keys [faker] :as context} generator]
-  (nullable context generator
-            (fn [deps]
-              (.expression ^Faker faker (:expression generator)))))
+  (let [expr (:expression generator)]
+    (nullable context generator
+              (fn [deps]
+                (try
+                  (.expression ^Faker faker expr)
+                  (catch Exception e
+                    (let [msg (format "Expression %s threw exception during evaluation." expr)]
+                      (throw (IllegalArgumentException. msg e)))))))))
 
 (defmethod gen-value-fn :dependent
   [context {:keys [topic attr] :as generator}]

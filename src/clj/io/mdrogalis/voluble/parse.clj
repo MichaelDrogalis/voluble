@@ -125,7 +125,9 @@
         (= config ["throttle" "ms"])
         (Long/parseLong v)
 
-        :else v))
+        :else
+        (let [msg (format "Unrecognized global configuration: %s" (:original-key parsed-k))]
+          (throw (IllegalArgumentException. msg)))))
 
 (defn parse-topic-value [{:keys [config] :as parsed-k} v]
   (cond (= config ["history" "records" "max"])
@@ -143,7 +145,9 @@
             (throw (ex-info "records.exactly must be greater than 0" {:value v})))
           n)
 
-        :else v))
+        :else
+        (let [msg (format "Unrecognized topic configuration: %s" (:original-key parsed-k))]
+          (throw (IllegalArgumentException. msg)))))
 
 (defn parse-attr-value [{:keys [config] :as parsed-k} v]
   (cond (= config ["null" "rate"])
@@ -152,11 +156,13 @@
         (= config ["matching" "rate"])
         (Double/parseDouble v)
 
-        :else v))
+        :else
+        (let [msg (format "Unrecognized attribute configuration: %s" (:original-key parsed-k))]
+          (throw (IllegalArgumentException. msg)))))
 
-(defn augment-parsed-val [parsed-k parsed-v]
+(defn augment-parsed-val [parsed-k parsed-v unparsed-v]
   (let [sub-keys (select-keys parsed-k [:topic :ns :attr :original-key :qualified?])]
-    (merge sub-keys parsed-v)))
+    (assoc (merge sub-keys parsed-v) :original-value unparsed-v)))
 
 (defn parse-keys [props]
   (reduce-kv
