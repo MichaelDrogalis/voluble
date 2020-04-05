@@ -142,7 +142,7 @@
          throttled-attempts 0]
     (if (> failed-attempts max-failed-attempts)
       (throw (ex-info "Couldn't generate another event. State machine may be livelocked."
-                      {:context context}))
+                      {:context (dissoc context :topic-seq)}))
       (let [status (get-in new-context [:generated :status])]
         (cond (contains? #{:success :drained} status)
               new-context
