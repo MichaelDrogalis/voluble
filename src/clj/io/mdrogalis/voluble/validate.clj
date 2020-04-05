@@ -5,24 +5,36 @@
 (defn format-topics [topics]
   (join ", " topics))
 
-(defn format-configs [context k topics]
-  (let [ks (mapcat (fn [t] (map :original-key (get-in context [:configs-by-topic k t]))) topics)]
-    (join ", " ks)))
+(defn original-keys [context k topics]
+  (mapcat
+   (fn [t]
+     (map :original-key (get-in context [:configs-by-topic k t])))
+   topics))
 
-(defn format-gen-configs [context topic ns*]
-  (let [ks (map :original-key (get-in context [:configs-by-topic :gen topic ns*]))]
-    (join ", " ks)))
+(defn original-gen-keys [context topic ns*]
+  (map :original-key (get-in context [:configs-by-topic :gen topic ns*])))
 
 (defn format-attr [attr]
   (join "->" attr))
+
+(defn ^String pretty-error-msg [msg bad-configs]
+  (str
+   (reduce
+    (fn [body config]
+      (str body (format "- %s\n" config)))
+    "Problematic configurations:\n\n"
+    bad-configs)
+   "\n" msg))
 
 (defn validate-topic-configs! [context topics]
   (let [configured-topics (set (keys (:topic-configs context)))
         unknown-topics (s/difference configured-topics topics)]
     (when-not (empty? unknown-topics)
       (let [formatted-topics (format-topics unknown-topics)
-            formatted-configs (format-configs context :topic unknown-topics)
-            msg (format "Topic configuration is supplied for topic(s) %s, but no generators are specified for them. Stopping because these topic configurations don't do anything. Either add generators for these topics or remove these topic configurations. Problematic configurations are: %s" formatted-topics formatted-configs)]
+            ks (original-keys context :topic unknown-topics)
+            msg (pretty-error-msg
+                 (format "Topic configuration is supplied for topic(s) %s, but no generators are specified for them. Stopping because these topic configurations don't do anything. Either add generators for these topics or remove these topic configurations." ks)
+                 ks)]
         (throw (IllegalArgumentException. msg))))))
 
 (defn validate-attr-configs! [context topics]
@@ -30,8 +42,10 @@
         unknown-topics (s/difference configured-topics topics)]
     (when-not (empty? unknown-topics)
       (let [formatted-topics (format-topics unknown-topics)
-            formatted-configs (format-configs context :attr unknown-topics)
-            msg (format "Attribute configuration is supplied for topic(s) %s, but no generators are specified for them. Stopping because these attribute configurations don't do anything. Either add generators for these topics or remove these attribute configurations. Problematic configurations are: %s" formatted-topics formatted-configs)]
+            ks (original-keys context :attr unknown-topics)
+            msg (pretty-error-msg
+                 (format "Attribute configuration is supplied for topic(s) %s, but no generators are specified for them. Stopping because these attribute configurations don't do anything. Either add generators for these topics or remove these attribute configurations." formatted-topics)
+                 ks)]
         (throw (IllegalArgumentException. msg))))))
 
 (defn validate-attr-shape! [context]
@@ -41,10 +55,14 @@
             ns* (name (:ns attr))]
         (if (:solo gen)
           (when (not= (:kind attr) :attribute-primitive)
-            (let [msg (format "Primitive attribute configuration is supplied for topic %s, but its generated %s is a complex type. Stopping because these configurations are incompatible. Either change its %s to a primitive type or change this configuration to a complex type. Problematic configuration is: %s" topic ns* ns* (:original-key attr))]
+            (let [msg (pretty-error-msg
+                       (format "Primitive attribute configuration is supplied for topic %s, but its generated %s is a complex type. Stopping because these configurations are incompatible. Either change its %s to a primitive type or change this configuration to a complex type." topic ns* ns*)
+                       [(:original-key attr)])]
               (throw (IllegalArgumentException. msg))))
           (when (not= (:kind attr) :attribute-complex)
-            (let [msg (format "Complex attribute configuration is supplied for topic %s, but its generated %s is a primitive type. Stopping because these configurations are incompatible. Either change its %s to a complex type or change this configuration to a primitive type. Problematic configuration is: %s" topic ns* ns* (:original-key attr))]
+            (let [msg (pretty-error-msg
+                       (format "Complex attribute configuration is supplied for topic %s, but its generated %s is a primitive type. Stopping because these configurations are incompatible. Either change its %s to a complex type or change this configuration to a primitive type." topic ns* ns*)
+                       [(:original-key attr)])]
               (throw (IllegalArgumentException. msg)))))))))
 
 (defn validate-unused-attrs! [context]
@@ -52,15 +70,19 @@
     (doseq [attr attrs]
       (when (= (:kind attr) :attribute-complex)
         (when-not (get-in context [:generators topic (:ns attr) :attrs (:attr attr)])
-          (let [msg (format "Complex attribute configuration is supplied for topic %s, but there is no generator that creates this attribute. Stopping because this configuration does nothing. Either add a generator for this attribute or remove this configuration. Problematic configuration is: %s" topic (:original-key attr))]
+          (let [msg (pretty-error-msg
+                     (format "Complex attribute configuration is supplied for topic %s, but there is no generator that creates this attribute. Stopping because this configuration does nothing. Either add a generator for this attribute or remove this configuration." topic)
+                     [(:original-key attr)])]
             (throw (IllegalArgumentException. msg))))))))
 
 (defn validate-shape-ns-conflicts! [context topic ns*]
   (when (and (get-in context [:generators topic ns* :solo])
              (get-in context [:generators topic ns* :attrs]))
     (let [ns-str (name ns*)
-          formatted-configs (format-gen-configs context topic ns*)
-          msg (format "Both primitive and complex generator %s configurations were supplied for topic %s. Stopping because these configurations are incompatible. Either use a single %s primitive generator configuration or use one or more complex configurations. Problematic configurations are: %s" ns-str topic ns-str formatted-configs)]
+          ks (original-gen-keys context topic ns*)
+          msg (pretty-error-msg
+               (format "Both primitive and complex generator %s configurations were supplied for topic %s. Stopping because these configurations are incompatible. Either use a single %s primitive generator configuration or use one or more complex configurations." ns-str topic ns-str)
+               ks)]
       (throw (IllegalArgumentException. msg)))))
 
 (defn validate-shape-conflicts! [context topics]
@@ -72,14 +94,24 @@
   (when (= (:strategy gen) :dependent)
     (let [dep-topic (:topic gen)]
       (when-not (contains? topics dep-topic)
-        (let [msg (format "Found a generator for topic %s that is dependent on topic %s, but no generator is defined for %s. Stopping because no data can ever be produced for topic %s. Either define a generator for topic %s or remove this generator. Problematic configuration is: %s" topic dep-topic dep-topic topic dep-topic (:original-key gen))]
+        (let [msg (pretty-error-msg
+                   (format "Found a generator for topic %s that is dependent on topic %s, but no generator is defined for %s. Stopping because no data can ever be produced for topic %s. Either define a generator for topic %s or remove this generator." topic dep-topic dep-topic topic dep-topic)
+                   [(:original-key gen)])]
           (throw (IllegalArgumentException. msg))))
 
-      (when-let [attr (:attr gen)]
+      (if-let [attr (:attr gen)]
         (when-not (get-in context [:generators dep-topic (:ns gen) :attrs attr])
           (let [ns-str (name (:ns gen))
                 formatted-attr (format-attr (:attr gen))
-                msg (format "Found a generator for topic %s that is dependent on attribute %s in topic %s's %s, but no generator is defined for that attribute. Stopping because this generator would always return null. Either define a generator for the attribute or remove this generator. Problematic configuration is: %s" topic formatted-attr dep-topic ns-str (:original-key gen))]
+                msg (pretty-error-msg
+                     (format "Found a generator for topic %s that is dependent on attribute %s in topic %s's %s, but no generator is defined for that attribute. Stopping because this generator would always return null. Either define a generator for the attribute or remove this generator." topic formatted-attr dep-topic ns-str)
+                     [(:original-key gen)])]
+            (throw (IllegalArgumentException. msg))))
+        (when-not (get-in context [:generators dep-topic (:ns gen) :solo])
+          (let [ns-str (name (:ns gen))
+                msg (pretty-error-msg
+                     (format "Found a generator for topic %s that is dependent on topic %s's %s, but there's no primitive generator defined for the %s. Stopping because this generator is incompatible. Either define a generator for the %s or remove this dependency." topic dep-topic ns-str ns-str ns-str)
+                     [(:original-key gen)])]
             (throw (IllegalArgumentException. msg))))))))
 
 (defn validate-ns-dependencies! [context topics topic ns*]
