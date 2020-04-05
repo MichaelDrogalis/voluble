@@ -24,7 +24,7 @@
    (reduce
     (fn [body [k v]]
       (str body (format "- %s = %s\n" k v)))
-    "Problematic configurations:\n\n"
+    "Configuration problem\n\nProblematic configurations:\n\n"
     bad-configs)
    "\n" msg))
 

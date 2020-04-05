@@ -191,16 +191,18 @@
 (defn dissoc-dep-choices [attrs]
   (map #(dissoc % :deps) attrs))
 
-(defn choose-dep-ns [attrs]
+(defn choose-dep-ns [by-topic attrs]
   (gen/fmap
    (fn [namespaces]
      (vec
       (map-indexed
        (fn [i ns*]
          (let [attr (get attrs i)]
-           (if (:dep attr)
+           ;; If there is a dependency, and that dependency's value
+           ;; actually exists to match against.
+           (if (and (:dep attr) (get-in by-topic [(:dep attr) ns*]))
              (assoc attr :dep-ns ns*)
-             attr)))
+             (dissoc attr :dep :dep-attr))))
        namespaces)))
    (gen/vector (gen/one-of [(gen/return :key) (gen/return :value)]) (count attrs))))
 
@@ -356,7 +358,7 @@
                   topic-configs (choose-max-history without-orphans topic-configs)
                   global-configs (gen-global-configs)
                   with-deps (choose-deps flat-attrs)
-                  with-dep-ns (choose-dep-ns with-deps)
+                  with-dep-ns (choose-dep-ns by-topic with-deps)
                   with-dep-attr (choose-dep-attr by-topic with-dep-ns)
                   with-qualifier (choose-qualifier with-dep-attr)]
           (let [attrs (dissoc-dep-choices with-qualifier)
