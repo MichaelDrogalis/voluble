@@ -1,6 +1,6 @@
 # Change Log
 
-### 0.3.0
+## 0.3.0
 
 - Enhanced validation to reject more invalid configurations.
 - Fixed live-lock detector to not OOM when throwing.
