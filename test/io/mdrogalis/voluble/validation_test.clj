@@ -27,8 +27,8 @@
     (expect-exception! props))
 
   (let [props {"genk.t1.beer.with" "#{Beer.name}"
-               "attrk.t1.beer.something" "10"
-               "genv.t1.card_type.with" "#{Business.creditCardType}"}]
+               "genv.t1.card_type.with" "#{Business.creditCardType}"
+               "attrk.t1.beer.something" "10"}]
     (expect-exception! props))
 
   (let [props {"genk.t1.beer.with" "#{Beer.name}"
@@ -69,4 +69,33 @@
 
   (let [props {"genvp.t1.with" "#{Beer.name}"
                "genv.t1.a1.with" "#{Beer.name}"}]
+    (expect-exception! props)))
+
+(deftest bad-dependencies
+  (let [props {"genkp.t1.matching" "t2.key"}]
+    (expect-exception! props))
+
+  (let [props {"genkp.t1.matching" "t2.key"
+               "genv.t2.a.with" "#{Beer.name}"}]
+    (expect-exception! props))
+
+  (let [props {"genkp.t1.matching" "t2.value"}]
+    (expect-exception! props))
+
+  (let [props {"genkp.t1.matching" "t2.value.b"
+               "genv.t2.a.with" "#{Beer.name}"}]
+    (expect-exception! props))
+
+  (let [props {"genvp.t1.matching" "t2.value"}]
+    (expect-exception! props))
+
+  (let [props {"genvp.t1.matching" "t2.value"
+               "genk.t2.a.with" "#{Beer.name}"}]
+    (expect-exception! props))
+
+  (let [props {"genvp.t1.matching" "t2.key"}]
+    (expect-exception! props))
+
+  (let [props {"genvp.t1.matching" "t2.key.b"
+               "genk.t2.a.with" "#{Beer.name}"}]
     (expect-exception! props)))
