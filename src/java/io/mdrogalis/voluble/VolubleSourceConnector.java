@@ -17,7 +17,7 @@ public class VolubleSourceConnector extends SourceConnector {
     public String version() {
         // For some reason, the JVM blows up if I try to call out
         // to Clojure here.
-        return "0.2.2-SNAPSHOT";
+        return "0.3.0";
     }
 
     @Override
