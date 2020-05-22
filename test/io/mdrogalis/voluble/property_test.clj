@@ -458,7 +458,7 @@
         (is (<= (count (get-in context [:history topic])) n))))))
 
 (defspec property-test
-  1000
+  600
   (prop/for-all
    [{:keys [props topics topic-configs global-configs attrs by-topic]} (generate-props)]
    (if (not (empty? props))
