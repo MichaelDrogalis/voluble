@@ -117,6 +117,12 @@ Install the Connector with [`confluent-hub`](https://docs.confluent.io/current/c
 confluent-hub install mdrogalis/voluble:0.3.0
 ```
 
+If you want to use it as a library:
+
+```
+[io.mdrogalis/voluble "0.3.0"]
+```
+
 ## Usage
 
 All configuration for Voluble is done through properties that are passed to the connector.
