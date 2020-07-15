@@ -45,7 +45,9 @@
             x)))
 
         (not (nil? x))
-        (primitive-schema x)))
+        (primitive-schema x)
+
+        :else Schema/OPTIONAL_STRING_SCHEMA))
 
 (defn build-converted-obj [x ^Schema schema]
   (if (map? x)
