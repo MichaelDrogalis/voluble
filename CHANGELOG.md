@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.1
+
+- Fixed null generators causing NPEs.
+
 ## 0.3.0
 
 - Enhanced validation to reject more invalid configurations.
