@@ -14,6 +14,20 @@ When working with Apache Kafka, you often find yourself wanting to continuously 
 
 Voluble ships as a [Kafka connector](https://docs.confluent.io/current/connect/index.html) to make it easy to scale and change serialization formats. You can use Kafka Connect through its REST API or integrated with [ksqlDB](http://ksqldb.io/). In this guide, I demonstrate using the latter, but the configuration is the same for both. I leave out Connect specific configuration like serializers and tasks that need to be configured for any connector.
 
+## Installation
+
+Install the Connector with [`confluent-hub`](https://docs.confluent.io/current/connect/managing/confluent-hub/client.html):
+
+```
+confluent-hub install mdrogalis/voluble:0.3.1
+```
+
+If you want to use it as a library:
+
+```
+[io.mdrogalis/voluble "0.3.1"]
+```
+
 ## Quick example
 
 Let's dive right in and look at an example. This exercises a bunch of features to give you an idea of what it's like to work with Voluble:
@@ -107,20 +121,6 @@ When you run this connector, you'll get data looking roughly like the following:
         }
     }
 ]
-```
-
-## Installation
-
-Install the Connector with [`confluent-hub`](https://docs.confluent.io/current/connect/managing/confluent-hub/client.html):
-
-```
-confluent-hub install mdrogalis/voluble:0.3.1
-```
-
-If you want to use it as a library:
-
-```
-[io.mdrogalis/voluble "0.3.1"]
 ```
 
 ## Usage
