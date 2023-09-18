@@ -2,7 +2,7 @@
 
 > :warning: **Voluble is now deprecated, see http://shadowtraffic.io**
 >
-> I've unfortunately run out of time to maintain this open-source connector. In its place, I've launched a commercial offering so that I can sustainably provide a similar service. Thanks for understanding!
+> I've unfortunately run out of time to maintain this open-source connector. In its place, I've launched an improved commercial offering so that I can sustainably provide a similar service. Thanks for understanding!
 
 [![CircleCI](https://circleci.com/gh/MichaelDrogalis/voluble.svg?style=svg)](https://circleci.com/gh/MichaelDrogalis/voluble)
 
