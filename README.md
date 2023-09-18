@@ -1,5 +1,9 @@
 # voluble
 
+> :warning: **Voluble is now deprecated, see http://shadowtraffic.io**
+>
+> I've unfortunately run out of time to maintain this open-source connector. In its place, I've launched a commercial offering so that I can sustainably provide a similar service. Thanks for understanding!
+
 [![CircleCI](https://circleci.com/gh/MichaelDrogalis/voluble.svg?style=svg)](https://circleci.com/gh/MichaelDrogalis/voluble)
 
 When working with Apache Kafka, you often find yourself wanting to continuously populate your topics with something that approximates the shape of your production data. Voluble solves that problem. The primary things it supports are:
